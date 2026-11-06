@@ -52,6 +52,10 @@ The direct BinDiff result is `analysis/bindiff-revenge-result/libg_REvenge_v68.s
 | `BattleScreen_activateSkill` `0x85CE88` | `0x14EC88C` | Similarity 0.9869, confidence 0.9905. |
 | `BattleScreen_update` `0x59C74C` | `0xC60C40` | Similarity 0.8894, confidence 0.9789; large per-frame handler. |
 | `handleJoystick` `0x5BABA0` | `0xD30B70` | Similarity 0.9579, confidence 0.9627. |
+| Speedhack `GameScreen__getLogicBattle` `0x87AA4C` | `0x15141BC` | Similarity 1.0, confidence 0.9047; both return the nested logic-battle pointer at context `+0x8F8/+0x9A0`, then `+0x28`. |
+| Speedhack pathfinder `0xC6B2C0` | `0x1A87474` | Similarity 1.0, confidence 0.9933; both have the same 8-argument contract and compare candidate paths by squared distance. |
+| Speedhack state predicate `0xB3284C` | `0x18EFDB4` | Similarity 0.9914, confidence 0.9928; matching state/eligibility checks and branch structure. Its V70 data-access helper target remains unresolved separately. |
+| Speedhack main-character global getter `0x86F3E8` | `0x14FE170` | Similarity 1.0, confidence 0.9047; both return the main-character global pointer. |
 | `LogicProjectileData_getRadius` `0xAFB170` | `0x18A5040` | Similarity 1.0, confidence 0.9047; V70 scalar field is `this+0x130`. |
 | `LogicProjectileData_getSpeed` `0xAFB0F0` | `0x18A4FC0` | BinDiff's best tiny-function match is ambiguous, but adjacent projectile-data getters confirm the semantic mapping: v68 speed/radius fields are `+0xD4/+0xE0`, while V70 speed/radius are `+0x124/+0x130` (both shift by `+0x50`). |
 | `LogicCharacterData_getSpeed` `0xAB3C40` | `0x1841618` | Similarity 1.0, confidence 0.9047; V70 decomp returns the 32-bit field at `this+0x26C`. |
@@ -61,6 +65,8 @@ The direct BinDiff result is `analysis/bindiff-revenge-result/libg_REvenge_v68.s
 | `LogicGameObjectClient_getX/Y/Z` `0xB5E44C/454/45C` | `0x18A5470/5488/5490` | Similarity 1.0, confidence 0.6225; tiny-gadget ambiguity. V70 decomp reads `this+0x120`, `this+0x234`, and `this+0x238`; not yet validated as positions. |
 
 Several matches are expressly rejected: the source tick RVA `0xC21A5C` maps poorly (`0.0317` similarity / `0.2227` confidence) to a V70 vector append routine; `getGameObjects` maps to a nullsub in the source IDB; and the BinDiff X/Y/Z getter matches read V70 fields `+0x120`, `+0x234`, `+0x238` instead of the v68 fields `+0x30/+0x34/+0x38`. The V70 tick and object-ID/data accessors remain unresolved pending runtime or stronger cross-use evidence.
+
+Speedhack-specific gaps: its character-drain helper `0xB32EC0` has only a weak candidate (`0xDC18A0`, similarity 0.112/confidence 0.216) with a mismatched signature/body, so it is rejected. `GameMain__update` `0x4D0224` has a weak update-shaped lead at `0x14750D4` (0.213/0.507) but remains unresolved. The four coordinate helpers have 1.0 similarity but only 0.622 confidence because they are tiny getters; their V70 fields differ substantially, so they need runtime or caller confirmation. The `flipByte` global at `0x12EE608` has no accepted V70 mapping. These gaps prevent enabling the speedhack feature from static results alone.
 
 Independent caller analysis gives a stronger semantic tick candidate than the BinDiff pairing: V70 `sub_17060F4` updates elapsed-time state and calls `sub_1A1E198` with the logic-battle object (`this+0x28`) and two frame-time values. `sub_1A1E198` has a `(this, float, float)` signature, is 6,800 bytes, and walks the object manager. It is a likely V70 `LogicBattleModeClient_update` implementation, but remains a candidate until the on-device probe observes it during a private match. A read-only Frida probe is available at `tools/cnv70_probe.py`; it samples the manager pointer, array count, and up to four global IDs, then detaches after five calls.
 

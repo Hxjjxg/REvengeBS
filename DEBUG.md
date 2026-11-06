@@ -66,10 +66,10 @@ Enabled the CN target with the requested 4000 ms delay and changed Gadget `on_lo
 - Conflicts: bytes at `0x192F6C8`, `0x1937DE0`, and `0x17060F4` match the IDB at the same RVAs; Frida reports the expected module path and base.
 - Test: compare additional unchanged anchors only if later evidence contradicts the current image identity.
 
-#### H4: Runtime code at `0x1A1E198` is redirected through an injected trampoline
-- Supports: live bytes are `50 00 00 58 00 02 1f d6 00 57 5a ff 76 00 00 00`, an LDR/BR stub followed by pointer `0x76ff5a5700`; that target is outside any Frida module and starts with another indirect-branch sequence.
+#### H4: Runtime code at `0x1A1E198` is redirected to an out-of-module address
+- Supports: live bytes are `50 00 00 58 00 02 1f d6 00 57 5a ff 76 00 00 00`, an LDR/BR stub followed by pointer `0x76ff5a5700`; Frida finds no module or memory range for that address, though a byte read there returns another indirect-branch sequence.
 - Conflicts: no evidence yet that this redirection prevents `Interceptor.attach` at the entry from observing calls.
-- Test: in a private match, hook the entry and a minimal callback to see whether the stub address is reached; only then consider testing the resolved target separately.
+- Test: in a private match, hook the entry and a minimal callback to see whether the stub address is reached; do not treat the out-of-module address as a verified function target.
 
 #### H5: The callback is reached but Frida message delivery is failing
 - Supports: no callback message arrived.
