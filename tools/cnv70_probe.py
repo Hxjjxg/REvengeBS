@@ -12,9 +12,25 @@ const game = Process.getModuleByName("libg.so");
 let hits = 0;
 let listener = null;
 
+function safeU32(address) {
+    try {
+        return address.readU32();
+    } catch (_) {
+        return null;
+    }
+}
+
+function safePointer(address) {
+    try {
+        return address.readPointer().toString();
+    } catch (_) {
+        return null;
+    }
+}
+
 listener = Interceptor.attach(game.base.add(TICK_RVA), {
     onEnter(args) {
-        if (++hits > 5) return;
+        if (++hits > 10) return;
 
         try {
             const self = args[0];
@@ -23,9 +39,21 @@ listener = Interceptor.attach(game.base.add(TICK_RVA), {
             const count = manager.add(0x0c).readU32();
             const objects = [];
 
-            for (let i = 0; i < Math.min(count, 4); i++) {
+            for (let i = 0; i < Math.min(count, 6); i++) {
                 const object = array.add(i * 8).readPointer();
-                objects.push({pointer: object.toString(), id: object.add(8).readU32()});
+                objects.push({
+                    pointer: object.toString(),
+                    vtable: safePointer(object),
+                    id: safeU32(object.add(8)),
+                    candidateFields: {
+                        ownerIndex_3c: safeU32(object.add(0x3c)),
+                        team_40: safeU32(object.add(0x40)),
+                        state_d0: safeU32(object.add(0xd0)),
+                        coordinate_120: safeU32(object.add(0x120)),
+                        coordinate_234: safeU32(object.add(0x234)),
+                        coordinate_238: safeU32(object.add(0x238))
+                    }
+                });
             }
 
             send({event: "tick", hit: hits, self: self.toString(),
@@ -35,7 +63,7 @@ listener = Interceptor.attach(game.base.add(TICK_RVA), {
             send({event: "read_error", hit: hits, error: String(error)});
         }
 
-        if (hits === 5) listener.detach();
+        if (hits === 10) listener.detach();
     }
 });
 
