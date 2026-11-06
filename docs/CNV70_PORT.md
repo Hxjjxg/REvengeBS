@@ -52,11 +52,13 @@ The direct BinDiff result is `analysis/bindiff-revenge-result/libg_REvenge_v68.s
 | `BattleScreen_update` `0x59C74C` | `0xC60C40` | Similarity 0.8894, confidence 0.9789; large per-frame handler. |
 | `handleJoystick` `0x5BABA0` | `0xD30B70` | Similarity 0.9579, confidence 0.9627. |
 | `LogicProjectileData_getRadius` `0xAFB170` | `0x18A5040` | Similarity 1.0, confidence 0.9047; V70 scalar field is `this+0x130`. |
+| `LogicProjectileData_getSpeed` `0xAFB0F0` | `0x18A4FC0` | BinDiff's best tiny-function match is ambiguous, but adjacent projectile-data getters confirm the semantic mapping: v68 speed/radius fields are `+0xD4/+0xE0`, while V70 speed/radius are `+0x124/+0x130` (both shift by `+0x50`). |
 | `LogicCharacterData_getCollisionRadius` `0xAB3E8C` | `0x184182C` | Similarity 1.0, confidence 0.9047; V70 scalar field is `this+0x2AC`. |
+| `LogicGameObjectClient_getData` `0xB5E12C` | `0x1937DD8` | Likely matching pointer-field getter: v68 reads `this+0x10`, V70 reads `this+0x20`. This trivial-gadget match is not yet runtime-validated. |
 | `LogicGameObjectClient_getGlobalID` `0xB5E3F8` | `0x18A5458` | Similarity 1.0 but confidence only 0.6225; trivial getter match conflicts with the directly used V70 ID getter `0x1937DE0` (`this+0x8`), so reject pending semantic resolution. |
 | `LogicGameObjectClient_getX/Y/Z` `0xB5E44C/454/45C` | `0x18A5470/5488/5490` | Similarity 1.0, confidence 0.6225; tiny-gadget ambiguity. V70 decomp reads `this+0x120`, `this+0x234`, and `this+0x238`; not yet validated as positions. |
 
-Several matches are expressly rejected: the source tick RVA `0xC21A5C` maps poorly (`0.0317` similarity / `0.2227` confidence) to a V70 vector append routine; the source projectile-speed getter maps to a V70 pointer getter despite its scalar signature; `getGameObjects` maps to a nullsub in the source IDB; and `getData` maps to an address with no V70 function boundary. V70 tick, projectile-speed, and data-access semantics remain unresolved.
+Several matches are expressly rejected: the source tick RVA `0xC21A5C` maps poorly (`0.0317` similarity / `0.2227` confidence) to a V70 vector append routine; `getGameObjects` maps to a nullsub in the source IDB; and the BinDiff X/Y/Z getter matches read unrelated V70 fields (`+0x120`, `+0x234`, `+0x238`) instead of the v68 `+0x30/+0x34/+0x38` fields. The V70 tick remains unresolved pending an in-match callback; the likely data accessor is listed above as provisional.
 
 Independent caller analysis gives a stronger semantic tick candidate than the BinDiff pairing: V70 `sub_17060F4` updates elapsed-time state and calls `sub_1A1E198` with the logic-battle object (`this+0x28`) and two frame-time values. `sub_1A1E198` has a `(this, float, float)` signature, is 6,800 bytes, and walks the object manager. It is a likely V70 `LogicBattleModeClient_update` implementation, but remains a candidate until the on-device probe observes it during a private match. A read-only Frida probe is available at `tools/cnv70_probe.py`; it samples the manager pointer, array count, and up to four global IDs, then detaches after five calls.
 
@@ -65,6 +67,12 @@ Headless Hex-Rays decompilation of `sub_192F6C8` confirms the main manager array
 Headless decompilation of V70 `sub_1937DE0` confirms it returns the 32-bit field at object `+0x8`; the manager-add function repeatedly calls this accessor to order and deduplicate game objects. This matches RevengeBS v68's `LogicGameObjectClient_getGlobalID` behavior. The adjacent V70 accessor `sub_1937DD8` returns a pointer at `+0x20`; its semantic role is intentionally left unnamed pending the exact reference diff.
 
 Runtime byte validation on the connected client confirmed the IDA RVAs are based at the live `libg.so` module base `0x75a8080000`: bytes at `base + 0x192f6c8` matched headless IDA (`81 03 00 b4 ff 43 01 d1 fd 7b 01 a9 f8 5f 02 a9`), and bytes at `base + 0x1937de0` matched (`00 08 40 b9 c0 03 5f d6`). This verifies address-base correspondence, not execution of either hook in a match.
+
+## Frida attachment check (2026-11-07)
+
+The local Python environment at `G:\frida16\.venv` successfully attached to the running Gadget with `tools/cnv70_probe.py`. It emitted `ready` for `libg.so + 0x1A1E198` at runtime address `0x75a9a9e198`, with module base `0x75a8080000` and mapped size `33,697,792` bytes. The hook remained installed for several seconds but emitted no `tick` event; it was then detached cleanly. The foreground app exposed only its game surface through the Android UI hierarchy, so this run proves Frida injection and address resolution, not that the candidate function executes during battle. The private friendly/practice match is the agreed runtime context for the next probe run.
+
+The current headless IDA MCP session `cnv70_headless_resume` is healthy and has Hex-Rays and string caches ready. Its `auto_analysis_ready` flag is false, so results are being taken from the existing analyzed database and should not be described as a fresh completed auto-analysis pass.
 
 ## Next analysis steps
 
