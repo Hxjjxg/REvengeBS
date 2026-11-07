@@ -111,6 +111,13 @@ The snapshot resolved the client data and position getters that were missing fro
 
 ## Latest private-device evidence (2026-11-07)
 
+The user confirms camera, FPS label and ESP visuals work in training. ESP cleanup
+crashed the game despite successful cleanup RPCs. The raw EGL GOT replacement
+retained a script-owned callback after unload; an actual-source fixture reproduced
+that ownership defect. The replacement uses a managed Interceptor handle and
+explicit detach. All 34 host JavaScript tests pass; fixed ESP display/unload still
+requires device retest. [Investigation](evidence/esp-lifecycle/DEBUG.md).
+
 The focused hypercharge follow-up now supplies the previously missing action:
 one natural type 17 (`0x11`) input at user activation, X/Y 0/0, no scanner errors
 and complete cleanup. [Evidence](evidence/runtime-observation/hypercharge-20261107.md).

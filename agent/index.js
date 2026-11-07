@@ -3,6 +3,7 @@ import
     initCSV
 }
 from "./core/csv.js";
+import { disposeSwapBuffers } from "./core/egl.js";
 import
 {
     initDataTables
@@ -510,6 +511,7 @@ rpc.exports = {
         for (const feature of Object.keys(state)) setState(feature, false);
         _observeScanner = false;
         observeProjectiles(false);
+        disposeSwapBuffers();
         resetAimbot();
         resetAutododge();
         resetSpinner();

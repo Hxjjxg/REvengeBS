@@ -681,6 +681,7 @@ export function setupESP(base)
         if (hookSwapBuffers(_renderOverlay))
         {
             _hookInstalled = true;
+            logInfo("esp swap hook installed", { method: "Interceptor.attach" });
             return;
         }
     }

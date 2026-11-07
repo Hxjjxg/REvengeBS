@@ -15,6 +15,7 @@ def main():
     parser.add_argument("--signing-bundle", type=Path)
     parser.add_argument("--duration", type=float, default=120)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--debug", action="store_true", help="Include agent setup and feature logs")
     parser.add_argument("--feature", action="append", default=[],
                         choices=["pin", "spray", "spinner", "camera", "autododge", "esp", "aimbot", "holdshoot", "killaura",
                                  "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam"])
@@ -58,6 +59,8 @@ def main():
             scripts.append(agent)
             agent.on("message", on_message)
             agent.load()
+            if args.debug:
+                agent.exports_sync.setdebug(True)
             emit("start", pid=target.pid, result=agent.exports_sync.start({"profile": "cnv70"}))
             emit("profile", value=agent.exports_sync.runtimeprofile())
             agent.exports_sync.observescanner(True)
