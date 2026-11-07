@@ -111,6 +111,13 @@ The snapshot resolved the client data and position getters that were missing fro
 
 ## Latest private-device evidence (2026-11-07)
 
+The user confirms gradient, automatic super, automatic hypercharge and private
+chat tests also pass. All four saved logs show no agent errors and complete
+cleanup. Single-feature verification is complete for the tested configurations,
+apart from explicitly deferred pin/spray and the FPS discrepancy. Combined
+features and cross-match lifecycle still require verification. Signing equality
+remains unverified in hash-disabled private matches.
+
 The user also reports speedhack, local spectator and BrawlTV displays work.
 Pin/spray remain unresolved: current carry counts/slots may differ. Per explicit
 user instruction record that finding only; do not modify pin/spray or the

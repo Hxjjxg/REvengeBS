@@ -31,11 +31,20 @@ version changed carry counts and slot positions and explicitly requests recordin
 only, without modifying either implementation. Their layouts remain unresolved.
 The FPS discrepancy below is also deferred by explicit user instruction.
 
-Remaining tests use runner --options-file (gradient/chatspam/killaura option
+The last four single-feature tests are now user-reported passed: gradient,
+automatic super, automatic hypercharge and private-room chat. Their saved logs
+test-gradient.jsonl, test-auto-super.jsonl, test-auto-hyper.jsonl and test-chat.jsonl
+all report cleanup completed=true with no ERROR or error-level entries.
+Gradient discovery resolved 45 names and selected FreeOffer. Super and hyper
+execution logs contain target resolution/activation attempts; actual success is
+supported by the user's outcome report rather than log wording alone. The user
+changed the chat preset text to 1234; the run used that text at a 10-second interval.
+Preserve this user configuration change.
+
+Tests use runner --options-file (gradient/chatspam/killaura option
 objects applied before enabling features) and --gradient-index (zero-based
 catalog selection). Presets in tools/test-options isolate automatic super,
-automatic hypercharge and slow private-room chat messages. These paths remain
-unverified until the user reports outcomes.
+automatic hypercharge and slow private-room chat messages.
 
 ## Deferred FPS discrepancy details
 
@@ -50,8 +59,8 @@ for now; do not change FPS behavior as part of the next tests.
 ## Evidence to next test path
 
 The saved logs support successful installation/execution and RPC cleanup. The
-user's visual/behavior reports supply the feature outcome evidence. Native token
-equality, non-default automatic super/hyper options and untested combinations
-remain unverified. Next independent tests: speedhack, pin, spray, local spectator
-and local BrawlTV display. Gradient selection needs an explicit catalog choice;
-enabling its default empty selection is not a useful visual test.
+user's visual/behavior reports supply the feature outcome evidence. Independent
+feature tests are complete except explicitly deferred pin/spray and the FPS
+discrepancy. Native signed-token equality remains unverified because private
+inputs use hash-disabled mode. Combinations and across-match lifecycle still
+need a focused private test; do not broaden to public matchmaking.
