@@ -193,3 +193,9 @@ Review reproduced sendCommand accepting token0 after key-read failure with hashE
 Root cause: the sender ignored the helper result, and0 conflated disabled hashing with failure. The helper now returns null for failure. The sender aborts on null, releases unsubmitted allocations, and treats native insertion as the ownership-transfer boundary. A thrown fill callback is also freed. V70 requires a verified delete binding before allocating. Root GOT resolution confirms PLT1DAFB80→libRoosterNN.so!_ZdlPv RVA1C6B8C; live bytes match the companion ELF. No allocation/free was invoked on the device during this check.
 
 The regression fixture verifies no insertion on signing failure, one free, cleanup after fill failure, valid hash-disabled zero tokens, and no premature free after native ownership transfer. The14-test suite passes. Runner cleanup now attempts every disable/stop/unload/detach independently and records RPC/transport cleanup failures rather than allowing the first error to skip the remaining work.
+
+## Camera cleanup and current device checkpoint
+
+Actual-source mocks reproduced camera mode3/6 persisting after disable/unload without another frame, plus old captured defaults crossing battle address reuse. The fix restores immediately for explicit cleanup and uses a cache-only reset for battle transitions. See docs/evidence/camera-lifecycle/DEBUG.md for the observations, three hypotheses, baseline failures and confirming experiments. All29 JavaScript tests plus the Python runner-cleanup test pass.
+
+Current device recheck: PID13248 remains alive; Android reports secure keyguard showing and screen off. The final compiled-runtime attempt timed out before script loading/process enumeration, then reported cleanup completed with no failures and stopped. No app restart followed that observation timeout. This supplies no new gameplay evidence; the last successful runtime installation remains the earlier relaunch smoke, with zero ticks while locked.

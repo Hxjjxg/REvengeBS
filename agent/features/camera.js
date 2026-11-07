@@ -48,10 +48,25 @@ export function ensureCameraMode()
     if ((_opts.mode | 0) === 0) _opts.mode = 3;
 }
 
-export function resetCamera()
+export function resetCamera(restore = true)
 {
+    let restored = false;
+    if (restore && _applied && _bs && _capturedFor && _bs.equals(_capturedFor))
+    {
+        try
+        {
+            _bs.add(offsets.BattleScreen_cameraMode).writeS32(_defaultMode);
+            restored = true;
+        }
+        catch (_)
+        {}
+    }
     _bs = null;
     _bsTs = 0;
+    _capturedFor = null;
+    _defaultMode = 0;
+    _applied = false;
+    return restored;
 }
 
 function captureDefaults(bs)

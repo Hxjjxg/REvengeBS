@@ -372,7 +372,7 @@ function startAgent()
                         resetAutododge();
                         resetSpinner();
                         resetESP();
-                        resetCamera();
+                        resetCamera(false);
                         resetSpray();
                         resetPin();
                         resetKillaura();
