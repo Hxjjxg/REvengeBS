@@ -39,7 +39,7 @@ class RuntimeCleanupTest(unittest.TestCase):
                     observescanner=lambda enabled: None if enabled else fail("stop_scanner"),
                     togglefeature=lambda feature, enabled: None if enabled else fail("disable_pin"),
                     prepare_unload=lambda: fail("prepare_unload"),
-                    startsigning=lambda: True,
+                    startsigning=lambda limit: True,
                     stop=lambda: fail("stop_signing"),
                 )
 

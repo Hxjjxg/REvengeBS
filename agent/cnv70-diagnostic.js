@@ -24,7 +24,7 @@ function stopSigning()
     }
 }
 
-async function installSigning(generation)
+async function installSigning(generation, limit)
 {
     if (signingListener !== null) return true;
     if (Process.arch !== "arm64" || Process.pointerSize !== 8)
@@ -41,21 +41,26 @@ async function installSigning(generation)
     const listener = Interceptor.attach(base.add(CNV70.functions.ClientInputManager_addInput), {
         onEnter(args)
         {
-            if (++hits > 20) return;
+            if (++hits > limit) return;
             try
             {
+                const command = args[1];
+                const commandType = command.add(CNV70.fields.ClientInput_type).readU32();
+                const sequence = command.add(CNV70.fields.ClientInput_sequence).readU32();
+                const x = command.add(CNV70.fields.ClientInput_x).readS32();
+                const y = command.add(CNV70.fields.ClientInput_y).readS32();
                 const battle = getBattle();
                 if (battle.isNull() || battle.add(CNV70.fields.BattleMode_hashEnabled).readU8() === 0)
                 {
-                    send({ type: "SIGNING_CHECK", hit: hits, skipped: "hash disabled or no battle" });
+                    send({ type: "SIGNING_CHECK", hit: hits, commandType, sequence, x, y,
+                        skipped: battle.isNull() ? "no battle" : "hash disabled" });
                 }
                 else
                 {
-                    const command = args[1];
                     const key = new Uint8Array(battle.add(CNV70.fields.BattleMode_hashKey).readByteArray(16));
                     const data = new Uint8Array(command.add(4).readByteArray(16));
                     const expectedToken = computeCNV70Token(key, data);
-                    send({ type: "SIGNING_CHECK", hit: hits, commandType: command.add(CNV70.fields.ClientInput_type).readU32(),
+                    send({ type: "SIGNING_CHECK", hit: hits, commandType, sequence, x, y,
                         matches: expectedToken === command.add(CNV70.fields.ClientInput_token).readU32() });
                 }
             }
@@ -63,18 +68,20 @@ async function installSigning(generation)
             {
                 send({ type: "SIGNING_CHECK", hit: hits, error: String(error) });
             }
-            if (hits === 20 && signingListener === listener) stopSigning();
+            if (hits === limit && signingListener === listener) stopSigning();
         }
     });
     signingListener = listener;
     return true;
 }
 
-function startSigning()
+function startSigning(limit = 20)
 {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 4096)
+        throw new Error("Input observation limit must be an integer from 1 to 4096");
     if (signingListener !== null) return Promise.resolve(true);
     if (signingStart !== null) return signingStart;
-    const pending = installSigning(signingGeneration).finally(() =>
+    const pending = installSigning(signingGeneration, limit).finally(() =>
     {
         if (signingStart === pending) signingStart = null;
     });

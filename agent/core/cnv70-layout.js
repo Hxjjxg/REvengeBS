@@ -50,7 +50,10 @@ export const CNV70 = Object.freeze({
         BattleMode_inputManager: 0x58,
         BattleMode_hashKey: 0x60,
         BattleMode_hashEnabled: 0x70,
+        ClientInput_sequence: 0,
         ClientInput_type: 8,
+        ClientInput_x: 0xc,
+        ClientInput_y: 0x10,
         ClientInput_token: 0x38
     }),
     vtables: Object.freeze({

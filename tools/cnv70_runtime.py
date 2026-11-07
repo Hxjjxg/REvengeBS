@@ -66,7 +66,7 @@ def main():
                 scripts.append(signing)
                 signing.on("message", on_message)
                 signing.load()
-                emit("signing_start", result=signing.exports_sync.startsigning())
+                emit("signing_start", result=signing.exports_sync.startsigning(4096))
             # Features are opt-in CLI arguments, used only in a private match.
             for feature in args.feature:
                 agent.exports_sync.togglefeature(feature, True)

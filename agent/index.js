@@ -28,6 +28,7 @@ from "./core/offsets.js";
 import
 {
     initScanner,
+    observeProjectiles,
     resetScannerCache,
     updateScanner,
     scanData
@@ -508,6 +509,7 @@ rpc.exports = {
     {
         for (const feature of Object.keys(state)) setState(feature, false);
         _observeScanner = false;
+        observeProjectiles(false);
         resetAimbot();
         resetAutododge();
         resetSpinner();
@@ -560,6 +562,7 @@ rpc.exports = {
     observescanner(value)
     {
         _observeScanner = !!value;
+        observeProjectiles(_observeScanner);
         return _observeScanner;
     },
     setautododgeopts(opts)

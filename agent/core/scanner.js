@@ -32,6 +32,12 @@ var _liveProjectiles = new Map();
 var _destroyed = [];
 var _friendlyIdx = new Set();
 var _projectileHooksInstalled = false;
+var _observeProjectiles = false;
+
+export function observeProjectiles(value)
+{
+    _observeProjectiles = !!value;
+}
 var MASSIVE_RADIUS_THRESHOLD = 380;
 var CASTING_RANGE_SCALE = 100;
 var SKILL_SLOT_MAX = 8;
@@ -775,7 +781,7 @@ export function updateScanner(bm, now)
                         const team = _teamOf(functions, obj, bm);
                         if (data.readPointer().equals(vtableProj))
                         {
-                            if (state.autododge && team !== scanData.myTeamId) _captureProjectile(obj, data, team);
+                            if ((state.autododge || _observeProjectiles) && team !== scanData.myTeamId) _captureProjectile(obj, data, team);
                             continue;
                         }
                         if (team === scanData.myTeamId)
@@ -863,7 +869,7 @@ export function updateScanner(bm, now)
         }
         scanData.enemies = enemies;
         scanData.destroyed = _destroyed.splice(0);
-        if (state.autododge)
+        if (state.autododge || _observeProjectiles)
         {
             scanData.projectiles = _updateLiveProjectiles(now);
         }

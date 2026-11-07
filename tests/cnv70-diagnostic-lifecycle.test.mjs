@@ -6,7 +6,7 @@ import vm from "node:vm";
 const source = readFileSync(new URL("../agent/cnv70-diagnostic.js", import.meta.url), "utf8")
     .replace(/^import[\s\S]*?from\s+"[^"]+";\s*/gm, "");
 
-function createHarness()
+function createHarness({ hashEnabled = true } = {})
 {
     let resolveModule;
     const moduleReady = new Promise((resolve) => { resolveModule = resolve; });
@@ -20,7 +20,7 @@ function createHarness()
         isNull() { return false; },
         add() {
             return {
-                readU8() { return 1; },
+                readU8() { return hashEnabled ? 1 : 0; },
                 readByteArray() { return new Uint8Array(16).buffer; }
             };
         }
@@ -29,7 +29,8 @@ function createHarness()
         add(offset) {
             return {
                 readByteArray() { return new Uint8Array(16).buffer; },
-                readU32() { return offset === 0x38 ? 123 : 2; }
+                readU32() { return offset === 0x38 ? 123 : offset === 0 ? 7 : 2; },
+                readS32() { return offset === 0xc ? 1200 : -450; }
             };
         }
     };
@@ -47,7 +48,10 @@ function createHarness()
             fields: {
                 BattleMode_hashEnabled: 0x70,
                 BattleMode_hashKey: 0x60,
+                ClientInput_sequence: 0,
                 ClientInput_type: 8,
+                ClientInput_x: 0xc,
+                ClientInput_y: 0x10,
                 ClientInput_token: 0x38
             }
         },
@@ -139,4 +143,33 @@ test("twenty natural input callbacks detach the signing hook and permit restart"
     assert.equal(harness.activeHandles().length, 1);
     harness.rpc.stopsigning();
     assert.equal(harness.activeHandles().length, 0);
+});
+
+test("hash-disabled natural inputs still report command fields without signing", async () =>
+{
+    const harness = createHarness({ hashEnabled: false });
+    harness.resolveModule();
+    await harness.rpc.startsigning();
+    harness.naturalInput(harness.handles[0]);
+    assert.equal(harness.messages[0].type, "SIGNING_CHECK");
+    assert.equal(harness.messages[0].commandType, 2);
+    assert.equal(harness.messages[0].sequence, 7);
+    assert.equal(harness.messages[0].x, 1200);
+    assert.equal(harness.messages[0].y, -450);
+    assert.equal(harness.messages[0].skipped, "hash disabled");
+    harness.rpc.stopsigning();
+});
+
+test("an extended observation survives twenty inputs and detaches at its requested limit", async () =>
+{
+    const harness = createHarness({ hashEnabled: false });
+    assert.throws(() => harness.rpc.startsigning(4097), /limit/);
+    harness.resolveModule();
+    await harness.rpc.startsigning(25);
+    const handle = harness.handles[0];
+    for (let i = 0; i < 20; i++) harness.naturalInput(handle);
+    assert.equal(handle.active, true);
+    for (let i = 0; i < 5; i++) harness.naturalInput(handle);
+    assert.equal(harness.messages.length, 25);
+    assert.equal(handle.active, false);
 });

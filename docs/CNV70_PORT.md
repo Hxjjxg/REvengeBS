@@ -109,7 +109,19 @@ The snapshot resolved the client data and position getters that were missing fro
 
 `agent/cnv70-diagnostic.js` is a separate entry point around the version-independent endpoint reader. Its RPC `start`, `endpoint`, and `stop` methods do not call the main agent's V68-specific startup. `frida-compile` successfully built it as `tmp/cnv70-diagnostic.js` after clearing invalid proxy environment variables for that command. The bundle contains the endpoint reader and does not contain the V68 battle-tick or CSV initialization. A live Gadget smoke test returned `start: true` and `stop: true`; no endpoint was reported while the phone was locked, so endpoint parsing against an active game connection remains unverified.
 
-## Next analysis steps
+## Latest private-device evidence (2026-11-07)
+
+All 16 feature paths are integrated; earlier unported/locked-screen statements
+below are historical checkpoints. The phone has since entered a private friendly
+match with bots. Frida captured changing Shelly positions/speed, enemy counts,
+10,283 update calls in a three-minute capture, and 20 natural input callbacks.
+Combat types and native signing equality remain unverified. Projectile zero
+counts were caused by an observation gate tied to disabled autododge, so they do
+not establish a projectile-layout failure. The corrected read-only observation
+and longer input limit are described in [runtime evidence](CNV70_RUNTIME.md).
+No gameplay feature has yet been validated or enabled on the device.
+
+## Next analysis steps (historical checkpoint)
 
 1. Recover game function anchors and runtime object layouts from the V70 IDB; correlate against the v68 reference and older CN IDBs where useful.
 2. Compare candidate function bodies with BinExport/BinDiff and record match confidence plus address provenance.

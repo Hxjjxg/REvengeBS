@@ -53,7 +53,7 @@ globalThis.NativeFunction = function(address) {
     return implementations.get(rva) || (() => ptr(0));
 };
 const { initFunctions } = await import("../agent/core/functions.js");
-const { initScanner, updateScanner, scanData } = await import("../agent/core/scanner.js");
+const { initScanner, updateScanner, observeProjectiles, scanData } = await import("../agent/core/scanner.js");
 const { sendCommand } = await import("../agent/core/commands.js");
 const { state } = await import("../agent/utils/flags.js");
 const { castSkill, activateHypercharge } = await import("../agent/helpers/combat.js");
@@ -188,6 +188,15 @@ test("V70 scanner and command layouts remain distinct from V68", () => {
     assert.equal(scanData.projectiles.length, 1);
     assert.equal(scanData.projectiles[0].isThrower, 0);
     assert.equal(scanData.projectiles[0].angle, null);
+    state.autododge = false;
+    observeProjectiles(true);
+    updateScanner(bm, 1240);
+    assert.equal(scanData.projectiles.length, 1, "read-only observation works with autododge disabled");
+    assert.equal(state.autododge, false);
+    observeProjectiles(false);
+    updateScanner(bm, 1241);
+    assert.equal(scanData.projectiles.length, 0, "disabling observation clears projectile output");
+    state.autododge = true;
     const allowedBindings = new Set(Object.values(o).filter(value => typeof value === "number"));
     assert.ok(bindings.every(rva => allowedBindings.has(rva)), "Every native binding must come from the selected V70 profile");
 

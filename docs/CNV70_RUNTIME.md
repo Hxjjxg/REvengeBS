@@ -106,7 +106,33 @@ The final rebuilt diagnostic was tested after a controlled relaunch on Gadget PI
 
 The named import at allocator PLT `1DAFBC0` is misleading in the packaged analysis. Allocation semantics must follow live code, callsites, and the exact V68 match rather than that label.
 
-## Runtime probe lifecycle and remaining test
+## Private gameplay observation (2026-11-07, latest)
+
+The device was unlocked and entered a private friendly room with bots. On PID
+18930, the 180-second `tmp/cnv70-private-match-3min.jsonl` capture recorded 178
+scanner samples and 10,283 battle-update calls. Shelly position and movement
+speed changed while the user played; samples included speed 800 and 920 and
+varying enemy counts. Twenty natural input-insertion callbacks were observed,
+but all reported `hash disabled or no battle`. This does not distinguish a
+disabled flag from a missing battle pointer and does not validate token equality
+or the shot/super/gadget/hyper command types. Cleanup completed without errors.
+
+Projectile counts were inconclusive: source inspection proved tracking was gated
+by autododge, which was disabled throughout the capture. The scanner now has a
+separate observation flag wired through `observescanner`, with no feature enabled.
+The actual-source fixture verifies projectiles are retained with autododge off
+and cleared when observation stops. The diagnostic now includes command type,
+sequence and X/Y even when signing is disabled, distinguishes a missing battle,
+and accepts a limit of 1–4096 inputs (default 20). The runner requests 4096 for a
+full round. No keys or raw tokens are emitted, and no inputs are created.
+
+Active gameplay screenshots were captured. Video recording failed because the
+device's `screenrecord` command was unavailable; no video artifact exists.
+Subsequent idle private-round logs contained no input callbacks. Corrected
+projectile and combat-command observation still requires an active user round.
+Debug evidence: [runtime observation](evidence/runtime-observation/DEBUG.md).
+
+## Runtime probe lifecycle and remaining test (historical checkpoint)
 
 `agent/core/cnv70-layout.js` holds the recovered partial V70 profile and is used by the signing diagnostic. The legacy V68 entry point does not load it. All profile function RVAs were checked against disassembly of the captured executable; private-match object values remain unverified.
 
