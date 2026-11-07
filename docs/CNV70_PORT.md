@@ -111,6 +111,13 @@ The snapshot resolved the client data and position getters that were missing fro
 
 ## Latest private-device evidence (2026-11-07)
 
+The user reports aimbot, holdshoot, attack-only killaura, spinner and autododge
+working with successful cleanup. FPS unlock/FPS display also operate, but the
+overlay reads around 120 while the developer refresh display reads 90. The user
+explicitly defers fixing this discrepancy. All six saved logs have complete
+cleanup and no reported agent/scanner errors. Test scope and pending checks:
+[feature results](evidence/runtime-observation/feature-tests-20261107.md).
+
 Fixed ESP retest: user reports no problems, including cleanup. The log records
 overlay draw activity, 5,307 update calls and complete cleanup. The earlier ESP
 unload failure described below is a historical checkpoint for the previous build.
