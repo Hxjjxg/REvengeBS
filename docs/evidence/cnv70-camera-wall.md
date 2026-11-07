@@ -1,4 +1,4 @@
-# CN V70 camera, wall cache, and combat evidence
+# CN V70 camera, wall cache, combat, and frame evidence
 
 Verified 2026-11-07. All function and table addresses are module RVAs; object offsets are relative to their owning object. These findings establish native code and layout correspondence. They do not establish successful gameplay operation.
 
@@ -15,6 +15,8 @@ The scope is the local compatibility port authorized in the conversation, includ
 | E-03 | `G:\Brawlstars-CN-V70\analysis\bindiff-revenge-result\libg_REvenge_v68.snapshot_vs_CNV70libg.snapshot.BinDiff` | Candidate generation. Every accepted mapping below was checked against instructions and caller context. |
 | E-04 | Root `/proc/12226/mem` reads, device `PJ696HEY9DNRLFFQ` | V70 module base `0x75B0A49000`. Bounded reads during this audit matched E-02 for camera, tile, firing, and selected skill routines. ASLR addresses and PID describe this capture only. |
 | E-05 | Root read of module RVA `0x3B0670`, 16 bytes | Decoded skill command table: `01000000010000000000000017000000`, or unsigned integers `[1, 1, 0, 23]`. Matches the separately captured decoded rodata window `CNV70.rodata-3ad000.bin`. |
+| E-06 | Root `/proc/13248/mem` reads, device `PJ696HEY9DNRLFFQ` | Fresh process after restart, module base `0x75A9895000`. Frame-manager, GameMain, closest-target and held-flag ranges matched E-02. The frame-manager object and Stage global were zero/null at this capture. |
+| E-07 | Local VM regression harness `tests/cnv70-fpsunlock.test.mjs` | Five behavioral tests exercise initialization guards, native segment ordering, restoration, disposal, and V68 compatibility. These tests use simulated pointers and hooks, without attaching to the game. |
 
 ## F-01: Wall cache mappings
 
@@ -113,7 +115,7 @@ The native mapper `150A8E8` reads `kind`, subtracts 2, returns zero outside indi
 
 Native creator `150A938` allocates 72 bytes, calls `19CAA04`, writes SkillData at `+40`, constructs X/Y at `+C/+10`, and calls signer `150AA54`. Its ordinary aiming path subtracts the own/body world position; additional native branches retain absolute coordinates and command flags. This observation does not establish that every direct `castSkill()` use in the source reproduces every native special case.
 
-The companion [skill/projectile evidence](cnv70-skills-projectiles.md) covers constructor-backed adapters for casting range (`+27C`), attack interval (`+298`), and behavior (`+21C`). Native accessor entry points were not established for those three fields, so poor BinDiff getter matches must not be bound as callable functions. This audit does not validate the source's hard-coded hypercharge input type `0x11` or every special skill behavior.
+The companion [skill/projectile evidence](cnv70-skills-projectiles.md) covers constructor-backed adapters for casting range (`+27C`), attack interval (`+298`), and behavior (`+21C`). Native accessor entry points were not established for those three fields, so poor BinDiff getter matches must not be bound as callable functions. Hypercharge command type `0x11` is supported by F-04 below; every special skill behavior remains untested.
 
 ## P-01: Wall-cache data flow
 
@@ -180,3 +182,85 @@ with open(path, "rb") as stream:
 For live comparison, use the existing read-only `tools/cnv70_code_snapshot.py::read_root_memory(serial,pid,base+rva,length)` helper after resolving the current PID and APK-mapped module base. The capture PID/base above must not be reused after a restart.
 
 Timeline: E-02 was captured at 00:55:56 UTC; this audit compared the exact V68 reference, inspected headless IDA MCP skill routines, validated E-04/E-05 through root reads, and recorded the findings by 01:52 UTC on 2026-11-07. No end-to-end gameplay claim follows from these checks.
+
+## F-04: Held controls, closest target, and hypercharge
+
+Status: validated native correspondence. Confidence: high. Category: reverse_algo. Severity: n/a_re. Evidence: E-01, E-02, E-06. Location: BattleScreen and native input construction.
+
+| Source field/function | V68 | V70 | Proof |
+|---|---:|---:|---|
+| `autoFireHeld` | `+F49` | `+1199` | `14F5EA8` sets X28 to screen+1000; `14F602C` loads byte `[x28+199]`. |
+| `attackJoyHeld` | `+F4A` | `+119A` | `14F6034` loads byte `[x28+19A]`. |
+| `ultiJoyHeld` | `+F4B` | `+119B` | `14F6038` loads byte `[x28+19B]`; independent load/reset at `14F5F24/14F5F3C`. |
+| `getClosestTargetForAutoshoot` | `876EB0` | `15064EC` | All four V68 autoshoot caller sites `862554/862584/862870/8628BC` map to V70 calls `14F27C0/14F27F4/14F2A74/14F2AC0`. |
+
+Closest-target selection retains body/character selection, trigonometric calculations, player context, and projectile filtering. V70 adds a ninth stack argument. The current source hook replaces the return pointer in `onLeave`; this mapping does not authorize introducing an eight-argument NativeFunction call. The weak BinDiff candidate `14FD800` is rejected.
+
+Native helper `C5D0E8` proves the no-payload hypercharge command type. It allocates 72 bytes at `C5D108`, sets W1 to `0x11` at `C5D110`, and invokes constructor `19CAA04` at `C5D118`. The remainder adds no skill payload; `C5D87C` sets the token at `+38`, and the helper resolves the input manager through singleton `+58` before tail-inserting at `F2CA40`. HUD caller `C5B154` gates this path with byte HUD+864. The V68 counterpart constructs the same type at `59871C/598724`. This supports the source `sendCommand(0x11, null)` representation; no command was sent by this audit.
+
+## F-05: GameMain and frame-manager layout
+
+Status: validated native code/layout, lifecycle behavior tested locally. Confidence: high. Category: reverse_algo. Severity: n/a_re. Evidence: E-01, E-02, E-06, E-07.
+
+| Source role | V68 | V70 | Evidence |
+|---|---:|---:|---|
+| `GameMain__update` | `4D0224` | `B3FA7C` | Same LCG constants `C28F5C29/051EB850`, rotate/check block at `B3FB08..B3FB28`; pause bytes/counter move from `+E8/+E9/+EC` to `+C0/+C1/+C4`. |
+| Frame-manager object / target FPS double | `12EFA28` | `1F911F8` | Constructor `A230D0` initializes five doubles at `+0/+8/+10/+18/+20` to 60. |
+| C++ initialization guard | — | `1F91220` | Native callers use an acquire byte load followed by bit-0 test. |
+| Segment selector | `EA3C5C` | `A233AC` | Indexes `[manager + segment*8 + 8]`, then tail-calls target setter `A230E8`. |
+| Cap field | `+148` | **`+20`** | Cap setter `A23494`: `str d0,[x0,#20]; ret`. |
+| Target setter | — | `A230E8` | Stores D0 at manager+0, with native display-refresh selection logic. |
+
+The weak GameMain candidate `14750D4` is a callee of the real updater (`B3FAF8`), so it is not a frame-count hook. The weak frame-limit candidate `92166C` is also rejected. The V68 `EA4160` routine contains per-frame waiting/timing logic; no equivalent large V70 routine was established. The compatibility key `FramerateManager__setLimit` names V70's small cap setter `A23494`, which requires reapplying the cap on return because its original store follows hook entry.
+
+The live object was zero at E-06, making initialization guards necessary. The V70 FPS-unlock implementation requires guard bit 0 and finite positive target/cap values before changing values or adding an EGL hook. It saves both values before a segment hook changes native arguments, uses cap offset `+20`, and restores the captured values on disable. Its EGL hook is lazy: disabled startup does not alter the swap interval. Once interval 0 has been applied, disable/disposal requests interval 1 on the next render-thread swap and then detaches the swap hook. This restores the implementation's standard interval-1 setting; it does not capture arbitrary preexisting EGL interval state.
+
+`disposeFpsUnlock()` clears keeper timers, detaches manager hooks, restores manager values, and reports `pendingSwapRestore`/`pendingTargetRestore`. A caller must let pending render cleanup finish before script unload. Local E-07 tests cover disabled/uninitialized startup and invalid values; delayed initialization with original-value capture before segment selection; disable plus one restoring swap; disposal plus pending-cleanup reporting; and the V68 `+148`/60 FPS fallback with a rapid toggle. These tests establish lifecycle behavior in the harness, not achievable device refresh rate or native-call correctness at runtime.
+
+## F-06: FPS label native UI dependencies
+
+Status: validated static correspondence; asset availability and rendering untested. Confidence: high for the listed instructions. Category: reverse_algo. Severity: n/a_re. Evidence: E-01, E-02.
+
+| Role | V68 | V70 | Proof |
+|---|---:|---:|---|
+| Resource lookup | `C85F54` | `8D0A30` | Path lookup returns a resource pointer; raw C-string plus integer ABI retained. |
+| DropGUIContainer constructor | `50DA1C` | `BAD4DC` | Corresponding base initialization and exported movie-clip loading; stores loaded clip at `BAD5B0`. |
+| DropGUIContainer allocation | `D0` bytes | **`120` bytes** | Allocation callers `BD4350/C78218` load W0 with `120` before allocation/constructor. Constructor stores through `+118`. |
+| Loaded movie clip | `+80` | **`+88`** | Constructor store at `BAD5B0`. |
+| MovieClip named text-field lookup | `CB5F14` | `996A14` | Calls generic name lookup `9952B4`, tests virtual type predicate at slot `+88`, returns original child only for a text field. |
+| TextField setter | — | `948D44` | Sibling lookup/setter `996A74` invokes the same name lookup then this setter. |
+| Stage singleton global | `12F3CC0` | `1F91CE0` | Getter/initializer `94F558` loads the global, allocates `E58` if null, calls `94D6B0`, then stores it. |
+| Stage child container | `+A8` | **`+90`** | Stage constructor allocates Sprite at `94D998`, constructs it at `94D9A8`, stores pointer at `94D9B0`. |
+| Stage addChild | `CCC9BC` | `95019C` | Loads Stage+90, tail-branches to Sprite addChild `94B270`. |
+| DisplayObject X/Y | `+20/+24` | `+20/+24` | Position setter `94C57C` stores S0/S1 together at `+20`. |
+| DisplayObject scale X/Y | `+10/+1C` | `+10/+1C` | Base constructor `94C3F4`, vector initialization at `94C424`. |
+| DisplayObject visible | `+8` | `+8` | Base constructor sets byte to 1 at `94C408`. |
+
+Native Stage neighbor `9501B4` independently retains the old `CCC9C4` touch-bounds control flow, with bounds moving from `+8C/+90` to `+84/+88` and the touch list from `+308/+310` to `+2F8/+300`. This distinguishes the accepted Stage wrapper from rejected candidate `1545DAC` and unrelated wrapper `C9CF94` using object+ D8. The text-field lookup is accepted despite a weak BinDiff score because its delegated child lookup and type predicate establish the relevant semantics.
+
+The FPS module now allocates using `DropGUIContainer_size`, with a missing-size guard for CN V70; using the old 208-byte allocation would underallocate an object whose constructor writes through `+118`. The source still requests `sc/ui.sc`, export `damage_number`, child `txt`, and returns without displaying when Stage/resource/movie clip/text field is absent. E-06 Stage was null. The asset names, label appearance, update cadence, and gameplay behavior require runtime observation in the permitted private friendly/practice mode.
+
+## Additional root range checks
+
+E-06 matched E-02 for the following bounded ranges (lengths in hexadecimal):
+
+| Start | Length | SHA256 |
+|---:|---:|---|
+| `A230D0` | `18` | `c4858e9e3af2233100211c77eb127f9225f063fc70d58ecfca91ba0b8087cea1` |
+| `A233AC` | `18` | `bcd6c5b7f78e8015179e412f02fa9ed3f83e83647387ddf79ed0ef3952a233d7` |
+| `A23494` | `8` | `2dc03a8717580745f8cddb3f6aefbc6d4f33a1384b213b32a0f2d01c030cf1ae` |
+| `B3FA7C` | `180` | `a294a7d1c1b340b565063c2d7ccbcf4825fbec6e769435f9a92482fad047046d` |
+| `15064EC` | `128` | `70c86e2dd74090dae4e685c73acaeb17656b885758f95c26a401af3588081bfe` |
+| `14F5E70` | `1D0` | `4183eac5d292fe8dd2f3da1d4bd311a256d68bb097107c379ee97ca0896fe93a` |
+
+## P-03: FPS frame hook and UI path
+
+Path type: callflow/lifecycle. Evidence: E-01, E-02, E-06, E-07. Findings: F-05, F-06.
+
+1. Observe `B3FA7C` for frame samples. Check Stage global `1F91CE0` and resource lookup `8D0A30` before label construction.
+2. Allocate `120` bytes, construct via `BAD4DC`, load movie clip from `+88`, and resolve `txt` via `996A14`.
+3. Attach through Stage `95019C`; update text with `948D44` using the existing game-string wrapper.
+4. For FPS unlock, check initialization guard and capture positive finite target/cap before selecting the unlocked segment or writing either double.
+5. On disable/unload, restore captured manager values and complete any render-thread swap-interval restoration before unloading the script.
+
+Validation command: `node --test tests/cnv70-fpsunlock.test.mjs` (5/5 pass). Runtime feature enablement, native UI calls, and achieved FPS remain outside this static/local-test result.

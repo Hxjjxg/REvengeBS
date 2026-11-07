@@ -2,6 +2,8 @@
 
 Frida agent for **Brawl Stars v68.250** (official, arm64). Not BSD.
 
+An explicit CN V70 port is included; gameplay validation is still pending.
+
 <p align="center">
   <a href="https://discord.gg/ZksZaUeDbW"><img src="https://img.shields.io/badge/Discord-join-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
@@ -29,7 +31,7 @@ Build the explicit V70 entry point separately from the V68 default:
 npx frida-compile agent/cnv70.js -o tmp/cnv70-agent.js -B iife
 ```
 
-Call `start()` after loading. `runtimeprofile()` reports mapped features available for testing and their validation status. All features start disabled. `observescanner(true)` enables read-only scanner observation; `scannerstatus()` returns tick/sample status. Unmapped features reject enable requests. The shared scanner, movement sender, pin/spray helpers, camera, and autododge have V70 mappings; private-match behavior remains unverified. Do not use the V68 build with the CN client.
+Call `start()` after loading. `runtimeprofile()` reports mapped features available for testing and their validation status. All features start disabled. `observescanner(true)` enables read-only scanner observation; `scannerstatus()` returns tick/sample/error status. All 16 source feature paths have V70 integrations, including their scanner, command, UI and frame-rate dependencies; private-match behavior remains unverified. Do not use the V68 build with the CN client.
 
 For the agreed private friendly/practice test, the single-connection runner can load both runtime and signing observation:
 
@@ -51,7 +53,7 @@ After loading the script, call `start()` to opt in to checking established TCP c
 
 For the agreed private friendly/practice match, `startsigning()` installs a separate read-only check of naturally generated client inputs. Each `SIGNING_CHECK` message reports whether the native V70 token matches the recovered calculation; it does not report the key or create commands. The check stops after 20 inputs, or through `stopsigning()` / `stop()`. It checks the live V70 getter signature before installing its hook. These diagnostics do not enable gameplay features.
 
-Run the runtime, signing and hook-lifecycle tests with `node --test tests/cnv70-runtime.test.mjs tests/cnv70-signing.test.mjs tests/cnv70-diagnostic-lifecycle.test.mjs`. See [the live-code research log](docs/CNV70_RUNTIME.md) for recovered layouts, snapshot reproduction, and remaining runtime validation.
+Run the 22 runtime, signing, hook-lifecycle, movement and frame-rate tests with `node --test tests/cnv70-runtime.test.mjs tests/cnv70-signing.test.mjs tests/cnv70-diagnostic-lifecycle.test.mjs tests/cnv70-speedhack.test.mjs tests/cnv70-fpsunlock.test.mjs`. See [the live-code research log](docs/CNV70_RUNTIME.md) for recovered layouts, snapshot reproduction, and remaining runtime validation.
 
 ## License
 

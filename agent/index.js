@@ -92,6 +92,7 @@ from "./features/fps.js";
 import
 {
     resetFpsUnlock,
+    disposeFpsUnlock,
     setupFpsUnlock
 }
 from "./features/fpsunlock.js";
@@ -202,7 +203,10 @@ var _setupDone = {};
 var _observeScanner = false;
 var _battleTickCount = 0;
 // Intermediate port availability; these require real private-match validation.
-const _cnv70Features = new Set(["pin", "spray", "spinner", "camera", "autododge"]);
+const _cnv70Features = new Set([
+    "pin", "spray", "spinner", "camera", "autododge", "esp", "aimbot", "holdshoot", "killaura",
+    "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam"
+]);
 var _modules = {
     camera:
     {
@@ -502,6 +506,8 @@ rpc.exports = {
     },
     prepareUnload()
     {
+        for (const feature of Object.keys(state)) setState(feature, false);
+        _observeScanner = false;
         resetAimbot();
         resetAutododge();
         resetSpinner();
@@ -519,6 +525,18 @@ rpc.exports = {
         resetCombat();
         resetGradient();
         resetIPGrabber();
+        const deadline = Date.now() + 2000;
+        return new Promise(resolve =>
+        {
+            const check = () =>
+            {
+                const pending = disposeFpsUnlock();
+                const ready = !pending.pendingSwapRestore && !pending.pendingTargetRestore;
+                if (ready || Date.now() >= deadline) resolve({ ready, ...pending });
+                else setTimeout(check, 16);
+            };
+            check();
+        });
     },
     getserverip()
     {
@@ -534,7 +552,7 @@ rpc.exports = {
     scannerstatus()
     {
         return { ticks: _battleTickCount, observing: _observeScanner,
-            lastUpdate: scanData.lastUpdate, x: scanData.myX, y: scanData.myY,
+            lastUpdate: scanData.lastUpdate, lastError: scanData.lastError, x: scanData.myX, y: scanData.myY,
             team: scanData.myTeamId, playerIndex: scanData.myPlayerIndex,
             speed: scanData.mySpeed, brawler: scanData.myBrawlerName,
             enemies: scanData.enemies.length, projectiles: scanData.liveProjectiles };

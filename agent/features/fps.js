@@ -72,7 +72,10 @@ function _build()
     const resource = _isResourceLoaded(_fileName, 0);
     if (!resource || resource.isNull()) return false;
 
-    const container = getFunctions().operator_new(CONTAINER_SIZE);
+    const size = typeof offsets.DropGUIContainer_size === "number" ?
+        offsets.DropGUIContainer_size : offsets.Runtime_profile === "cnv70" ? 0 : CONTAINER_SIZE;
+    if (size <= 0) return false;
+    const container = getFunctions().operator_new(size);
     if (!container || container.isNull()) return false;
 
     withScString(SC_FILE, (file) =>

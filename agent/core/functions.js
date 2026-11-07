@@ -47,6 +47,7 @@ export function initFunctions(baseIn)
         LogicBattleModeClient_getOwnPlayerTeam: _nf("LogicBattleModeClient_getOwnPlayerTeam", "uint32", ["pointer"]),
         LogicBattleModeClient_getOwnPlayerIndex: _nf("LogicBattleModeClient__getOwnPlayerIndex", "int32", ["pointer"]),
         LogicGameObjectClient_getData: _nf("LogicGameObjectClient_getData", "pointer", ["pointer"]),
+        LogicGameObjectClient_resolveTeam: _nf("LogicGameObjectClient_resolveTeam", "uint32", ["pointer", "pointer"]),
         LogicProjectileData_getSpeed: _nf("LogicProjectileData_getSpeed", "uint32", ["pointer"]),
         LogicProjectileData_getRadius: _nf("LogicProjectileData_getRadius", "uint32", ["pointer"]),
         LogicProjectileData_getSpawnAreaEffect: _nf("LogicProjectileData__getSpawnAreaEffect", "pointer", ["pointer"]),
@@ -91,6 +92,7 @@ export function initFunctions(baseIn)
         MessageManager_sendMessage: _nf("MessageManager__sendMessage", "void", ["pointer", "pointer"]),
         Name_setupDecorated: _nf("Name_setupDecorated", "pointer", ["pointer", "pointer", "pointer"]),
         operator_new: _nf("operator_new", "pointer", ["ulong"]),
+        operator_delete: _nf("operator_delete", "void", ["pointer"]),
     };
     Object.freeze(_n);
     return _n;

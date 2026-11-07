@@ -58,7 +58,8 @@ export var scanData = {
     projectiles: [],
     destroyed: [],
     liveProjectiles: 0,
-    lastUpdate: 0
+    lastUpdate: 0,
+    lastError: null
 };
 
 function _validPtr(value)
@@ -183,6 +184,13 @@ function _readOwnerIndex(obj)
     {
         return -1;
     }
+}
+
+function _teamOf(fns, object, battle)
+{
+    if (fns.LogicGameObjectClient_resolveTeam)
+        return fns.LogicGameObjectClient_resolveTeam(object, _validPtr(battle) ? battle : ptr(0));
+    return object.add(offsets.GameObj_team).readU32();
 }
 
 function _bodyOf(obj)
@@ -408,7 +416,7 @@ function _captureProjectile(projectile, data, ownerTeamOverride)
         {
             try
             {
-                ownerTeam = projectile.add(offsets.LogicProjectileClient_ownerTeam).readU32() | 0;
+                ownerTeam = _teamOf(fns, projectile, scanData.battleModeClient);
             }
             catch (_)
             {}
@@ -655,6 +663,7 @@ export function updateScanner(bm, now)
     if (!moduleBase) return;
     if (now === void 0) now = Date.now();
     const functions = getFunctions();
+    scanData.lastError = null;
     try
     {
         const own = functions.LogicBattleModeClient_getOwnCharacter(bm);
@@ -665,6 +674,8 @@ export function updateScanner(bm, now)
             scanData.hasCarryable = false;
             scanData.throwsOverWalls = false;
             scanData.lastUpdate = 0;
+            scanData.enemies = [];
+            scanData.projectiles = [];
             return;
         }
         scanData.ownCharacter = own;
@@ -689,6 +700,9 @@ export function updateScanner(bm, now)
         scanData.hasCarryable = _readHasCarryable(functions, own, bm);
         scanData.throwsOverWalls = _readThrowsOverWalls(functions, own);
         scanData.mySpeed = 720;
+        scanData.myRadius = 60;
+        scanData.myBrawlerId = 0;
+        scanData.myBrawlerName = null;
         const ownData = functions.LogicGameObjectClient_getData(own);
         if (_validPtr(ownData))
         {
@@ -758,7 +772,7 @@ export function updateScanner(bm, now)
                         }
                         const data = functions.LogicGameObjectClient_getData(obj);
                         if (!_validPtr(data)) continue;
-                        const team = obj.add(offsets.GameObj_team).readU32();
+                        const team = _teamOf(functions, obj, bm);
                         if (data.readPointer().equals(vtableProj))
                         {
                             if (state.autododge && team !== scanData.myTeamId) _captureProjectile(obj, data, team);
@@ -861,8 +875,13 @@ export function updateScanner(bm, now)
         scanData.liveProjectiles = _liveProjectiles.size;
         scanData.lastUpdate = now;
     }
-    catch (_)
-    {}
+    catch (error)
+    {
+        scanData.lastUpdate = 0;
+        scanData.enemies = [];
+        scanData.projectiles = [];
+        scanData.lastError = String(error);
+    }
 }
 
 export function resetScannerCache()
@@ -877,6 +896,14 @@ export function resetScannerCache()
     scanData.destroyed = [];
     scanData.liveProjectiles = 0;
     scanData.hackSpeed = 0;
+    scanData.lastUpdate = 0;
+    scanData.lastError = null;
+    scanData.ownCharacter = null;
+    scanData.battleModeClient = null;
+    scanData.myBrawlerName = null;
+    scanData.myBrawlerId = 0;
+    scanData.myRadius = 60;
+    scanData.enemies = [];
 }
 
 export function initScanner(base)

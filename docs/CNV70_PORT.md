@@ -10,7 +10,7 @@ Reference agent areas inventoried so far:
 - Gameplay features: aimbot, autododge, camera, chat spam, ESP, FPS display/unlock, gradient cosmetics, hold-shoot, IP grabber, killaura, pin, spectator, speedhack, spinner, and spray.
 - Shared helpers: combat, aim lead, dodge profiles/kinds, and wall/visibility cache.
 
-Porting any feature requires validating its function addresses, object layouts, and runtime assumptions against the CN V70 binary. An isolated diagnostic entry point and read-only probes are present; gameplay features remain unported. The later live-code findings below supersede the earlier unresolved client-getter entries.
+Porting any feature requires validating its function addresses, object layouts, and runtime assumptions against the CN V70 binary. An explicit partial V70 runtime, isolated diagnostic entry point, and read-only probes are present. Several gameplay paths have mapped integrations, but none has passed a private-match test. The latest integrated-runtime checkpoints and evidence documents below supersede earlier unresolved entries.
 
 ## V70 binary evidence
 
@@ -135,3 +135,23 @@ Initial features available for private testing: pin, spray, spinner, camera, aut
 The phone is still locked. The user selected private friendly/practice testing; no public match was started. Actual tick execution, object values, native token equality, movement/pin/spray/camera/autododge behavior, and visual overlay remain outstanding. Full port completion is not claimed.
 
 Detailed native evidence: [scanner/CSV/strings](evidence/cnv70-scanner-native.md), [skills/projectiles](evidence/cnv70-skills-projectiles.md), and [camera/walls/combat](evidence/cnv70-camera-wall.md).
+
+### IDA annotations and extended gameplay bindings
+
+IDA MCP saved an analysis-only backup `analysis/runtime/CNV70libg.before-runtime-profile.i64`, named six accepted team/index/camera/fire/tile/autoshoot functions, attached provenance comments, and saved `analysis/runtime/CNV70libg.runtime-profile.i64`. Both saves succeeded; source ELF and device code were unchanged.
+
+The subsequent native audit resolved the closest-autoshoot-target hook15064EC, activateSkill ABI, and held flags1199/119A/119B. Aimbot, hold-shoot, and ESP now have all their directly used V70 addresses/fields integrated and are available for private testing. Their gameplay validation is still empty. Killaura's hypercharge command and special-skill cases need separate confirmation. Scanner observation now reports errors and invalidates stale outputs after a failed scan; the fixture covers this failure path.
+
+### All feature paths integrated; gameplay verification still pending
+
+All16 source feature paths now have V70 integrations available through the explicit runtime: aimbot, autododge, ESP, spinner, killaura, camera, spray, pin, local BrawlTV/spectator display, chatspam, FPS display/unlock, gradients, hold-shoot, and speedhack. The endpoint monitor is also accessible. This describes mapped code availability, not successful in-game behavior or backend acceptance. `runtimeprofile().gameplayValidated` remains empty. No chat message was sent during the work.
+
+Speedhack uses a complete dedicated V70 profile, including native movement-vector getters, control/frame fields, sequence timing, and movement-drain entry18F0728. The interior instruction18F0F68 is not a function entry. FPS display uses the recovered0x120 allocation size and clip+88, avoiding the legacy0xD0 allocation. FPS unlock uses native initialization guard1F91220, cap+20, captures/restores pre-enable rates, and waits for render-thread swap restoration during unload. If preparation reports pending restoration after its bounded wait, cleanup must be considered incomplete.
+
+Review also closed effective-team resolution: native callers prove1928710 accepts the inner battle pointer supplied to the scanner. Raw team alone is insufficient for owned objects. Fixtures now include allied characters/projectiles whose raw and effective teams differ, failed scans, signing read failures, hash-disabled inputs, ownership transfer, type23 skill commands, and type17 hypercharge commands.
+
+Current host validation:22 tests pass across runtime/signing/diagnostic lifecycle/speedhack/FPS-unlock suites; Python runner/probe compile. Both explicit V70 and default V68 entry points compile. V68/V70 movement fixtures and frame-rate restoration fixtures exercise actual module source. Additional evidence: [social/UI](evidence/cnv70-social-ui.md) and [speedhack](evidence/cnv70-speedhack.md), plus the expanded camera/wall/combat record.
+
+Next required device step: unlock and enter the agreed private friendly/practice match. Start observation with all features off, confirm battle ticks and plausible own/enemy/projectile values, compare natural native signing tokens, and only then exercise individual features. The previous locked-screen smoke confirms Frida/runtime installation only. This full port task remains unfinished until the required device checks are recorded.
+
+Additional runner regression: `python -m unittest discover -s tests -p test_cnv70_runtime.py` passes. It injects failures into feature disable, scanner stop, unload preparation, signing stop and script unload, then verifies all remaining cleanup actions and session detach are still attempted and the result reports incomplete cleanup. This complements the22 passing JavaScript tests; it does not connect to the device.

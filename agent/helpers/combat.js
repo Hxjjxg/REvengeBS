@@ -321,5 +321,5 @@ export function castSkill(data, myX, myY, fireX, fireY)
 
 export function activateHypercharge()
 {
-    return sendCommand(HYPER_COMMAND_TYPE, null);
+    return sendCommand(offsets.Hypercharge_commandType ?? HYPER_COMMAND_TYPE, null);
 }

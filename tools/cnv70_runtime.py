@@ -16,7 +16,8 @@ def main():
     parser.add_argument("--duration", type=float, default=120)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--feature", action="append", default=[],
-                        choices=["pin", "spray", "spinner", "camera", "autododge"])
+                        choices=["pin", "spray", "spinner", "camera", "autododge", "esp", "aimbot", "holdshoot", "killaura",
+                                 "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam"])
     args = parser.parse_args()
     if args.duration <= 0:
         parser.error("Duration must be positive")
@@ -84,23 +85,34 @@ def main():
         timer = threading.Timer(5, cleanup.cancel)
         timer.daemon = True
         timer.start()
+        cleanup_errors = []
+
+        def attempt(name, action):
+            try:
+                result = action()
+                if name == "prepare_unload":
+                    emit("prepared", value=result)
+                    if isinstance(result, dict) and result.get("ready") is False:
+                        cleanup_errors.append(name)
+            except Exception as error:
+                cleanup_errors.append(name)
+                emit("cleanup_error", action=name, error=type(error).__name__)
+
         try:
             with cleanup:
                 if agent is not None and not agent.is_destroyed:
                     for feature in args.feature:
-                        agent.exports_sync.togglefeature(feature, False)
-                    agent.exports_sync.observescanner(False)
-                    agent.exports_sync.prepare_unload()
+                        attempt("disable_" + feature, lambda: agent.exports_sync.togglefeature(feature, False))
+                    attempt("stop_scanner", lambda: agent.exports_sync.observescanner(False))
+                    attempt("prepare_unload", lambda: agent.exports_sync.prepare_unload())
                 if signing is not None and not signing.is_destroyed:
-                    signing.exports_sync.stop()
+                    attempt("stop_signing", lambda: signing.exports_sync.stop())
                 for script in reversed(scripts):
                     if not script.is_destroyed:
-                        script.unload()
+                        attempt("unload", script.unload)
                 if session is not None and not session.is_detached:
-                    session.detach()
-                emit("cleanup", completed=True)
-        except (frida.InvalidOperationError, frida.TransportError, frida.OperationCancelledError) as error:
-            emit("cleanup", completed=False, error=type(error).__name__)
+                    attempt("detach", session.detach)
+                emit("cleanup", completed=not cleanup_errors, failures=cleanup_errors)
         finally:
             timer.cancel()
             emit("stopped")

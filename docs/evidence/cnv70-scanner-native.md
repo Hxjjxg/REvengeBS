@@ -33,6 +33,10 @@ All addresses are RVAs relative to `libg.so`. E-live contains captured executabl
 | Projectile instance vtable | `0x1EB1BC8` | Constructor/factory and relocation evidence from the projectile analysis |
 | Projectile target X/Y | `+0x1F4` / `+0x1F8` | Getters `0x193CDDC` / `0x193CDE4`, rendering, parser and copy routines |
 
+E-effective-team-caller: The second argument of `0x1928710` is the inner battle logic itself, whose first fields contain the player pointer array at `+0` and count at `+0xC`. This is proven by two independent live native callers, rather than inferred from the field shape. Helper `0xBF0374` obtains the outer singleton with `BL 0x16FE760` at `0xBF0388`, loads inner logic with `LDR X0,[X0,#0x28]` at `0xBF038C`, and calls own-team getter `0x1A20358`. It then repeats the singleton lookup at `0xBF0398`, loads `LDR X1,[X0,#0x28]` at `0xBF039C`, restores the object into X0 at `0xBF03A0`, and calls `0x1928710` at `0xBF03A4` before comparing the returned team with the own team.
+
+Native closest-autoshoot-target routine independently executes `BL 0x16FE760` at `0x15068E4`, `LDR X1,[X0,#0x28]` at `0x15068E8`, `MOV X0,X21` at `0x15068EC`, and `BL 0x1928710` at `0x15068F0`. Consequently the shared scanner can call `resolveTeam(object,bm)` using its inner update argument directly. The resolver checks owner index `object+0x44` against the inner player count, loads that player from the array, and obtains its effective team through `0x1A4EB20`. It falls back to raw `object+0x48` when the logic pointer, owner, player, or effective team is unavailable. Reading raw `+0x48` alone does not reproduce native team classification for owned characters/projectiles.
+
 E-character-alive: V68 character vtable `0x1209930` slot `+0x30` points to `0xB3148C`, which tests signed health at `+0xAC`. V68 deserializer `0xB2EDE8` stores serialized field `0x7C` into `+0xAC`. V70 `0x18EBD00` stores field `0x80` into `+0xCC`; `0x18EBD14` reads that field and branches on whether it is positive. Live predicate:
 
 ```asm

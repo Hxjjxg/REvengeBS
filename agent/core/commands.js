@@ -92,7 +92,7 @@ function signClientInput(ci, battle)
     }
     catch (_)
     {
-        return 0;
+        return null;
     }
 
     let key16;
@@ -102,9 +102,9 @@ function signClientInput(ci, battle)
     }
     catch (_)
     {
-        return 0;
+        return null;
     }
-    if (!key16 || key16.length < 16) return 0;
+    if (!key16 || key16.length < 16) return null;
 
     let cmdData16;
     try
@@ -113,9 +113,9 @@ function signClientInput(ci, battle)
     }
     catch (_)
     {
-        return 0;
+        return null;
     }
-    if (!cmdData16 || cmdData16.length < 16) return 0;
+    if (!cmdData16 || cmdData16.length < 16) return null;
 
     const token = offsets.Runtime_profile === "cnv70" ?
         computeCNV70Token(key16, cmdData16) : _computeToken(key16, cmdData16);
@@ -125,34 +125,48 @@ function signClientInput(ci, battle)
     }
     catch (_)
     {
-        return 0;
+        return null;
     }
     return token;
 }
 
 export function sendCommand(cmdType, fillFn)
 {
+    let fns = null;
+    let ci = null;
+    let submitted = false;
     try
     {
-        const fns = getFunctions();
+        fns = getFunctions();
         const battle = fns.BattleMode_getInstance();
         if (!battle || battle.isNull()) return false;
 
         const mgr = battle.add(offsets.BattleMode_clientInputManager).readPointer();
         if (!mgr || mgr.isNull()) return false;
 
-        const ci = fns.operator_new(CMD_BUF_SIZE);
+        if (offsets.Runtime_profile === "cnv70" && !fns.operator_delete) return false;
+        ci = fns.operator_new(CMD_BUF_SIZE);
         if (!ci || ci.isNull()) return false;
 
         ci.writeByteArray(_zeroBuf);
         fns.ClientInput_constructor_int(ci, cmdType | 0);
         if (fillFn) fillFn(ci, battle);
-        signClientInput(ci, battle);
+        if (signClientInput(ci, battle) === null) return false;
+        // Native insertion takes ownership; an exception after entering it does
+        // not establish whether the command is still ours to free.
+        submitted = true;
         fns.ClientInputManager_addInput(mgr, ci);
         return true;
     }
     catch (_)
     {
         return false;
+    }
+    finally
+    {
+        if (!submitted && ci && !ci.isNull() && fns && fns.operator_delete)
+        {
+            try { fns.operator_delete(ci); } catch (_) {}
+        }
     }
 }

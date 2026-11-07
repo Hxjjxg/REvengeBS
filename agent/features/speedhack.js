@@ -58,14 +58,37 @@ var _pathOut = null;
 var _bound = false;
 var getMainChar = null;
 
-const O = {
-    gameBattle: 40,
-    charCtx: 16,
-    movingCtl: 1240,
-    movingFlag: 186,
-    resetSpeed: 3952,
-    ctrlPtr: 2536
-};
+// Each profile is complete; CN V70 must never inherit a V68 address or field.
+// Mapping and native caller evidence: docs/evidence/cnv70-speedhack.md.
+const PROFILES = Object.freeze({
+    v68: Object.freeze({
+        game: 0x9bb5e8, getLocalChar: 0xc239b0, setPosition: 0xc23b14,
+        getChar: 0x87aa4c, pathfind: 0xc6b2c0, diagFlag: 0xb3284c,
+        drainMove: 0xb32ec0, getMainChar: 0x86f3e8,
+        charDx1: 0x86eed0, charDx2: 0x86eee0,
+        charDy1: 0x86eed8, charDy2: 0x86eee8,
+        posX: 0xb5e44c, posY: 0xb5e454,
+        flipByte: 0x12ee608, gameUpdate: 0x4d0224,
+        gameBattle: 0x28, charCtx: 0x10,
+        movingCtl: 0x4d8, movingFlag: 0xba,
+        resetSpeed: 0xf70, ctrlPtr: 0x9e8,
+        currentSpeed: 0x234, battleSequence: 0xb8
+    }),
+    cnv70: Object.freeze({
+        game: 0x16fe760, getLocalChar: 0x1a20700, setPosition: 0x1a20864,
+        getChar: 0x15141bc, pathfind: 0x1a87474, diagFlag: 0x18efdb4,
+        drainMove: 0x18f0728, getMainChar: 0x14fe170,
+        charDx1: 0x14fdecc, charDx2: 0x14fdedc,
+        charDy1: 0x14fded4, charDy2: 0x14fdee4,
+        posX: 0x19286f0, posY: 0x19286f8,
+        flipByte: 0x1faad90, gameUpdate: 0xb3fa7c,
+        gameBattle: 0x28, charCtx: 0x10,
+        movingCtl: 0x4b8, movingFlag: 0xda,
+        resetSpeed: 0x11c0, ctrlPtr: 0xb20,
+        currentSpeed: 0x250, battleSequence: 0xb8
+    })
+});
+let O = null;
 
 function off(android)
 {
@@ -133,7 +156,7 @@ const speedHack = {
         boostTarget: 3.2,
         cliffMargin: 0,
         ssMinStep: 68,
-        speedOff: 564,
+        speedOff: null,
         serverThrottleMs: 10,
         fpsCompensate: true,
         targetTps: 400,
@@ -416,7 +439,7 @@ const speedHack = {
                 this.stop();
                 return;
             }
-            const seq = b.add(184).readInt();
+            const seq = b.add(O.battleSequence).readInt();
             drainMove(c, seq / 50 | 0, seq % 50 * 20, b, 0);
             this.pending -= 1;
         }
@@ -564,25 +587,31 @@ function _guestAlloc(size)
 
 function _bind(base)
 {
+    const profile = offsets.Runtime_profile || "v68";
+    if (!Object.prototype.hasOwnProperty.call(PROFILES, profile))
+        throw new Error("No speedhack mappings for runtime profile: " + profile);
+    O = PROFILES[profile];
     _base = base;
     _pathOut = _guestAlloc(16);
     if (!_pathOut) return;
-    game = new NativeFunction(off(10204648), "pointer", []);
-    getLocalChar = new NativeFunction(off(12728752), "pointer", ["pointer"]);
-    setPosition = new NativeFunction(off(12729108), "pointer", ["pointer", "int", "int", "bool"]);
-    getChar = new NativeFunction(off(8890956), "pointer", ["pointer"]);
-    pathfind = new NativeFunction(off(13021888), "int", ["int", "int", "int", "int", "pointer", "pointer", "bool", "int", "int", "int"]);
-    diagFlag = new NativeFunction(off(11741260), "int", ["pointer"]);
-    drainMove = new NativeFunction(off(11742912), "void", ["pointer", "int", "int", "pointer", "float"]);
-    getMainChar = new NativeFunction(off(8844264), "pointer", []);
-    charDx1 = new NativeFunction(off(8842960), "float", ["pointer"]);
-    charDx2 = new NativeFunction(off(8842976), "float", ["pointer"]);
-    charDy1 = new NativeFunction(off(8842968), "float", ["pointer"]);
-    charDy2 = new NativeFunction(off(8842984), "float", ["pointer"]);
-    posX = new NativeFunction(off(11920460), "uint32", ["pointer"]);
-    posY = new NativeFunction(off(11920468), "uint32", ["pointer"]);
-    flipByte = off(19850760);
-    gameUpdate = off(5046820);
+    game = new NativeFunction(off(O.game), "pointer", []);
+    getLocalChar = new NativeFunction(off(O.getLocalChar), "pointer", ["pointer"]);
+    setPosition = new NativeFunction(off(O.setPosition), "void", ["pointer", "int", "int", "bool"]);
+    getChar = new NativeFunction(off(O.getChar), "pointer", ["pointer"]);
+    // Arguments 9/10 are loaded from the caller stack by the native function.
+    pathfind = new NativeFunction(off(O.pathfind), "int", ["int", "int", "int", "int", "pointer", "pointer", "bool", "int", "int", "int"]);
+    diagFlag = new NativeFunction(off(O.diagFlag), "int", ["pointer"]);
+    drainMove = new NativeFunction(off(O.drainMove), "void", ["pointer", "int", "int", "pointer", "float"]);
+    getMainChar = new NativeFunction(off(O.getMainChar), "pointer", []);
+    charDx1 = new NativeFunction(off(O.charDx1), "float", ["pointer"]);
+    charDx2 = new NativeFunction(off(O.charDx2), "float", ["pointer"]);
+    charDy1 = new NativeFunction(off(O.charDy1), "float", ["pointer"]);
+    charDy2 = new NativeFunction(off(O.charDy2), "float", ["pointer"]);
+    posX = new NativeFunction(off(O.posX), "uint32", ["pointer"]);
+    posY = new NativeFunction(off(O.posY), "uint32", ["pointer"]);
+    flipByte = off(O.flipByte);
+    gameUpdate = off(O.gameUpdate);
+    speedHack.config.speedOff = O.currentSpeed;
     _bound = true;
 }
 
