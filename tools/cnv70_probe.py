@@ -49,9 +49,9 @@ listener = Interceptor.attach(game.base.add(TICK_RVA), {
                         ownerIndex_3c: safeU32(object.add(0x3c)),
                         team_40: safeU32(object.add(0x40)),
                         state_d0: safeU32(object.add(0xd0)),
-                        coordinate_120: safeU32(object.add(0x120)),
-                        coordinate_234: safeU32(object.add(0x234)),
-                        coordinate_238: safeU32(object.add(0x238))
+                        offset_120: safeU32(object.add(0x120)),
+                        offset_234: safeU32(object.add(0x234)),
+                        offset_238: safeU32(object.add(0x238))
                     }
                 });
             }
