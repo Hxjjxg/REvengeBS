@@ -29,7 +29,11 @@ Offsets in `agent/core/offsets.js` are RVAs for that exact `libg.so`. Other vers
 npx frida-compile agent/cnv70-diagnostic.js -o dist/cnv70-diagnostic.js -B iife
 ```
 
-After loading the script, call `start()` to opt in to checking established TCP connections, `endpoint()` to read the captured endpoint, and `stop()` to stop polling. It reports a matching endpoint through the Frida message channel. This entry point does not port or validate gameplay features.
+After loading the script, call `start()` to opt in to checking established TCP connections, `endpoint()` to read the captured endpoint, and `stop()` to stop polling and detach diagnostic hooks. It reports a matching endpoint through the Frida message channel. Endpoint attribution still requires correlation with the game's own connection.
+
+For the agreed private friendly/practice match, `startsigning()` installs a separate read-only check of naturally generated client inputs. Each `SIGNING_CHECK` message reports whether the native V70 token matches the recovered calculation; it does not report the key or create commands. The check stops after 20 inputs, or through `stopsigning()` / `stop()`. It checks the live V70 getter signature before installing its hook. These diagnostics do not enable gameplay features.
+
+Run the signing and hook-lifecycle tests with `node --test tests/cnv70-signing.test.mjs tests/cnv70-diagnostic-lifecycle.test.mjs`. See [the live-code research log](docs/CNV70_RUNTIME.md) for recovered layouts, snapshot reproduction, and remaining runtime validation.
 
 ## License
 

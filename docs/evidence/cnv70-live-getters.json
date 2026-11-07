@@ -1,0 +1,79 @@
+{
+  "provenance": {
+    "source": "G:\\Brawlstars-CN-V70\\lib\\arm64-v8a\\CNV70libg.so",
+    "pid": 2118,
+    "serial": "PJ696HEY9DNRLFFQ",
+    "module_base": "0x75a8c20000",
+    "backend": "adb-root-proc-mem",
+    "captured_at": "2026-11-07T00:55:56.322594+00:00",
+    "source_sha256": "9555b29e432ce8e478bcdbda37008da1a757b4ea6f37454a1ea69d2d627243c5",
+    "snapshot_sha256": "c85a93bf497d912a1da7db2bc315e8c8f9a8207557d330b4313015c0c3139624",
+    "sections": [
+      {
+        "name": ".text",
+        "rva": "0x8a6710",
+        "file_offset": "0x8a6710",
+        "size": 22058016,
+        "changed_bytes": 5527753,
+        "sha256": "988d19c475bf6c0eb27dd9fcf231e7f406ec0534b510c1c8d899c65e377f7960"
+      },
+      {
+        "name": ".plt",
+        "rva": "0x1dafb30",
+        "file_offset": "0x1dafb30",
+        "size": 11280,
+        "changed_bytes": 0,
+        "sha256": "06b0d92d39330b3cdece3e2e3d0c435d48f918a46ca25c731ae4478132fe21a7"
+      }
+    ],
+    "note": "Analysis snapshot: only executable sections replaced with live bytes. Other sections remain from the source ELF; not a deployable library."
+  },
+  "note": "Instruction semantics plus corresponding Revenge V68 callers; no live match-object values or gameplay features validated.",
+  "ida": {
+    "session": "9119f77b",
+    "backup": "G:\\Brawlstars-CN-V70\\analysis\\runtime\\CNV70libg.before-live-getters.i64",
+    "analysis_copy": "G:\\Brawlstars-CN-V70\\analysis\\runtime\\CNV70libg.live-getters.i64",
+    "restored_ranges": [
+      {
+        "addr": "0x1928320",
+        "data": "00 08 40 f9 c0 03 5f d6"
+      },
+      {
+        "addr": "0x1928694",
+        "data": "00 0c 40 f9 c0 03 5f d6 00 08 40 b9 c0 03 5f d6 a8 36 90 52 09 30 80 b9 c8 69 a3 72 28 7d 28 9b 09 fd 7f d3 08 fd 65 93 00 01 09 0b c0 03 5f d6 a8 36 90 52 09 34 80 b9 c8 69 a3 72 28 7d 28 9b 09 fd 7f d3 08 fd 65 93 00 01 09 0b c0 03 5f d6 01 08 06 29 03 40 00 b9 c0 03 5f d6 00 30 40 b9 c0 03 5f d6 00 34 40 b9 c0 03 5f d6 00 40 40 b9 c0 03 5f d6 00 c0 00 91 c0 03 5f d6 e1 02 00 b4 08 44 40 b9 a8 02 f8 37 29 0c 40 b9 3f 01 08 6b 4d 02 00 54 29 00 40 f9 28 59 68 f8 e8 01 00 b4 fd 7b be a9 f3 0b 00 f9 fd 03 00 91 f3 03 00 aa e0 03 08 aa f6 98 04 94 e8 03 00 2a e0 03 13 aa 1f 05 00 31 f3 0b 40 f9 fd 7b c2 a8 60 00 00 54 e0 03 08 2a c0 03 5f d6 08 48 40 b9 e0 03 08 2a c0 03 5f d6"
+      }
+    ]
+  },
+  "decompilations": [
+    {
+      "addr": "0x1928320",
+      "code": "__int64 __fastcall sub_1928320(__int64 a1)\n{\n  return *(_QWORD *)(a1 + 16); /*0x1928324*/\n}"
+    },
+    {
+      "addr": "0x192869c",
+      "code": "__int64 __fastcall sub_192869C(__int64 a1)\n{\n  return *(unsigned int *)(a1 + 8); /*0x19286a0*/\n}"
+    },
+    {
+      "addr": "0x19286f0",
+      "code": "__int64 __fastcall sub_19286F0(__int64 a1)\n{\n  return *(unsigned int *)(a1 + 48); /*0x19286f4*/\n}"
+    },
+    {
+      "addr": "0x19286f8",
+      "code": "__int64 __fastcall sub_19286F8(__int64 a1)\n{\n  return *(unsigned int *)(a1 + 52); /*0x19286fc*/\n}"
+    },
+    {
+      "addr": "0x1928700",
+      "code": "__int64 __fastcall sub_1928700(__int64 a1)\n{\n  return *(unsigned int *)(a1 + 64); /*0x1928704*/\n}"
+    },
+    {
+      "addr": "0x1928710",
+      "code": "__int64 __fastcall sub_1928710(__int64 a1, __int64 a2)\n{\n  unsigned int v2; // w8\n  __int64 v3; // x8\n  __int64 v4; // x19\n  unsigned int v5; // w8\n\n  if ( a2 == 0 ) /*0x1928710*/\n    return *(unsigned int *)(a1 + 72); /*0x1928710*/\n  v2 = *(_DWORD *)(a1 + 68); /*0x1928714*/\n  if ( (v2 & 0x80000000) != 0 ) /*0x1928718*/\n    return *(unsigned int *)(a1 + 72); /*0x1928718*/\n  if ( *(_DWORD *)(a2 + 12) <= (signed int)v2 ) /*0x1928724*/\n    return *(unsigned int *)(a1 + 72); /*0x1928724*/\n  v3 = *(_QWORD *)(*(_QWORD *)a2 + 8LL * v2); /*0x192872c*/\n  if ( v3 == 0 ) /*0x1928730*/\n    return *(unsigned int *)(a1 + 72); /*0x1928730*/\n  v4 = a1; /*0x1928740*/\n  v5 = sub_1A4EB20(a1: v3); /*0x192874c*/\n  a1 = v4; /*0x1928750*/\n  if ( v5 == -1 ) /*0x1928760*/\n    return *(unsigned int *)(a1 + 72); /*0x1928770*/\n  else\n    return v5; /*0x1928764*/\n}",
+      "refs": [
+        {
+          "addr": "0x1a4eb20",
+          "name": "sub_1A4EB20"
+        }
+      ]
+    }
+  ]
+}

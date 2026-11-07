@@ -126,3 +126,46 @@ The repeat RPC attempt had no live Gadget/game process behind the still-configur
 ### Fix
 
 No code fix is justified. Resume testing only after the user unlocks and relaunches the CN client; first confirm the Gadget process and device listener, then run the minimal ping before the diagnostic RPC.
+
+## Debug: Packaged client-getter bytes do not match running code
+
+### Observations and hypotheses
+
+- The original V70 IDB has many code references to `0x1928320`, but no useful function boundary. Raw bytes also obscure the paired coordinate getter region.
+- H1: executable protection transforms these regions at runtime. This is supported by recurring encoded instruction bytes and the known difference between valid caller behavior and undecodable targets. Test: compare the same RVA in the running module with the packaged ELF.
+- H2: the module base or binary version is wrong. Earlier unchanged anchors matched the IDB, conflicting with a global mismatch. Test: compare unchanged anchors and the ELF header as well as the disputed region.
+- H3: tiny-function BinDiff matches selected unrelated scalar getters. Their caller semantics already conflicted with position accessors. Test: compare exact V68/V70 callers and decoded live instructions, rather than accepting a score alone.
+
+### Experiments and conclusion
+
+- Relaunch produced PID `2118`, module base `0x75A8C20000`. A minimal Frida script returned `ping: true` and delivered `1928320 = LDR X0,[X0,#0x10]; RET`, with client X/Y/Z at `19286F0/6F8/700` reading `+0x30/+0x34/+0x40`.
+- A subsequent executable snapshot attempt stalled during Frida process enumeration, before reads. It was stopped deliberately to use a different verified read path; no target-process write was attempted.
+- Root access independently read the same getter bytes from `/proc/2118/mem`. The full ELF64 header matches the packaged source. A separate executable-only snapshot has 5,527,753 changed `.text` bytes; `.plt` and all non-executable file bytes are unchanged.
+- A naive XOR `0x58` decodes some packaged bytes into plausible code, but does not reproduce the runtime getter sequence. It is rejected as a general restoration method.
+- Exact caller comparisons corroborate data, ID, coordinates, owner-index `+0x44`, and raw-team `+0x48` semantics. This confirms H1 and rejects H2 for this capture; H3 explains the rejected old scalar matches.
+
+### Analysis changes
+
+The original IDB was backed up before selected getter bytes were restored in the analysis database only. Reconstructed getters were decompiled through MCP, annotated, and saved as a separate IDB copy. The packaged library and device process were not patched. Artifact hashes and reproducible root-capture commands are in `docs/CNV70_RUNTIME.md` and `docs/evidence/cnv70-live-getters.json`.
+
+## Debug: Probe clients survive their useful lifetime
+
+### Root cause and change
+
+The old hook detached after ten callbacks, while Python waited indefinitely on a fresh Event that was never signaled. Device disconnects likewise did not end that wait. The revised probe signals completion after its sample limit or detach, applies a cancellable operation deadline, and bounds cleanup. It also uses the recovered client fields instead of the old owner/team guesses.
+
+### Regression check
+
+`G:\frida16\.venv\Scripts\python.exe -u tools\cnv70_probe.py --duration 3` returned `Probe deadline reached.` followed by `Probe stopped.` and exited with code 0 against the observed stalled Gadget enumeration. A subsequent process query found no `cnv70_probe.py` or snapshot client left running. A private-match sample-limit test remains outstanding.
+
+## V70 command-signing validation checkpoint
+
+Live code and read-only data establish token `+0x38`, the extended type range, and the masks/dispatch constants. The new pure V70 signer passes eight independent Python-hashlib reference tests. The diagnostic compiles and its opt-in `startsigning()` hook compares natural native commands without creating or changing them.
+
+After a controlled relaunch to clear the unresponsive Gadget session, PID `5483` returned `startsigning: true`, `stopsigning: true`, and `stop: true`; script unload and session detach completed. This confirms installation and cleanup only. No `SIGNING_CHECK` command-token result was observed while the device remained locked. Native token equivalence and actual gameplay remain unverified until the private match.
+
+## Debug: Concurrent signing-probe startup
+
+The implementation review reproduced two starts before `libg()` resolves installing two hooks; stop detached only the second handle. A stop before module resolution also allowed a late hook installation. The cause is the listener-only guard before an asynchronous wait. The fix shares the pending start, invalidates pending work with a generation on stop, and checks the generation again after module resolution. Four focused mocked lifecycle tests pass, including both reproduced cases, restart after cancellation, and automatic cleanup at 20 inputs. Together with the eight signing reference tests, all 12 tests pass.
+
+A new Frida client against still-live locked PID `5483` again timed out during enumeration; its bounded smoke harness exited. Following a controlled relaunch and the configured injection delay, the final rebuilt diagnostic on Gadget PID `12226` returned `startsigning: true`, `stopsigning: true`, and `stop: true`, then unloaded/detached. The recurring second-client transport stall remains unexplained; it was not a diagnostic script error. No natural command tokens or in-match objects have been sampled.

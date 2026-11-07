@@ -1,0 +1,61 @@
+// Recovered instruction/caller evidence; private-match object values remain unverified.
+// This is a partial V70 profile and is not loaded by the legacy V68 entry point.
+export const CNV70 = Object.freeze({
+    functions: Object.freeze({
+        BattleMode_getInstance: 0x16fe760,
+        LogicBattleModeClient_updateCandidate: 0x1a1e198,
+        LogicBattleModeClient_getOwnCharacter: 0x1a20700,
+        LogicBattleModeClient_getOwnPlayerTeam: 0x1a1ff10,
+        LogicBattleModeClient_getOwnPlayerIndex: 0x1a20350,
+        LogicGameObjectManagerClient_findGameObject: 0x192d3f0,
+        LogicGameObjectClient_getData: 0x1928320,
+        LogicGameObjectClient_getGlobalID: 0x192869c,
+        LogicGameObjectClient_getX: 0x19286f0,
+        LogicGameObjectClient_getY: 0x19286f8,
+        LogicGameObjectClient_getZ: 0x1928700,
+        LogicGameObjectClient_resolveTeam: 0x1928710,
+        LogicCharacterClient_isAlive: 0x18ee794,
+        LogicCharacterData_getSpeed: 0x1841618,
+        LogicCharacterData_getCollisionRadius: 0x184182c,
+        LogicProjectileClient_constructor: 0x193c78c,
+        LogicProjectileClient_reset: 0x193c804,
+        LogicProjectileClient_getData: 0x193cc00,
+        LogicProjectileClient_getTargetX: 0x193cddc,
+        LogicProjectileClient_getTargetY: 0x193cde4,
+        LogicProjectileData_getSpeed: 0x18a4fc0,
+        LogicProjectileData_getRadius: 0x18a5040,
+        LogicProjectileData_getRendering: 0x18a5264,
+        ClientInput_constructor: 0x19caa04,
+        ClientInputManager_addInput: 0xf2ca40
+    }),
+    fields: Object.freeze({
+        LogicBattleModeClient_objectManager: 0x28,
+        LogicBattleModeClient_ownId: 0x100,
+        LogicBattleModeClient_ownPlayerIndex: 0xe0,
+        LogicBattleModeClient_ownTeam: 0xec,
+        ObjectManager_array: 0,
+        ObjectManager_count: 0xc,
+        GameObject_id: 8,
+        GameObject_data: 0x10,
+        GameObject_x: 0x30,
+        GameObject_y: 0x34,
+        GameObject_z: 0x40,
+        GameObject_ownerIndex: 0x44,
+        GameObject_rawTeam: 0x48,
+        Character_health: 0xcc,
+        Character_currentSpeed: 0x250,
+        Character_body: 0x420,
+        Projectile_targetX: 0x1f4,
+        Projectile_targetY: 0x1f8,
+        BattleMode_inputManager: 0x58,
+        BattleMode_hashKey: 0x60,
+        BattleMode_hashEnabled: 0x70,
+        ClientInput_type: 8,
+        ClientInput_token: 0x38
+    }),
+    vtables: Object.freeze({
+        Character: 0x1eb1570,
+        OwnCharacter: 0x1eb15d0,
+        Projectile: 0x1eb1bc8
+    })
+});
