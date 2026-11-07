@@ -4,6 +4,7 @@ import
 }
 from "./core/csv.js";
 import { disposeSwapBuffers } from "./core/egl.js";
+import { resetTurnshot, updateTurnshot } from "./features/turnshot.js";
 import
 {
     initDataTables
@@ -176,6 +177,7 @@ import
     FLAG_SPINNER,
     FLAG_SPRAY,
     FLAG_SPEEDHACK,
+    FLAG_TURNSHOT,
     getFlags,
     setState,
     setupSafe,
@@ -197,7 +199,7 @@ import
 }
 from "./utils/wallCache.js";
 
-var _ACTIVE_MASK = FLAG_AIMBOT | FLAG_AUTODODGE | FLAG_ESP | FLAG_SPINNER | FLAG_KILLAURA | FLAG_SPRAY | FLAG_PIN | FLAG_HOLDSHOOT | FLAG_SPEEDHACK;
+var _ACTIVE_MASK = FLAG_AIMBOT | FLAG_AUTODODGE | FLAG_ESP | FLAG_SPINNER | FLAG_KILLAURA | FLAG_SPRAY | FLAG_PIN | FLAG_HOLDSHOOT | FLAG_SPEEDHACK | FLAG_TURNSHOT;
 var _AIM_OR_KILL = FLAG_AIMBOT | FLAG_KILLAURA;
 var _setupBase = null;
 var _setupReady = false;
@@ -207,7 +209,7 @@ var _battleTickCount = 0;
 // Intermediate port availability; these require real private-match validation.
 const _cnv70Features = new Set([
     "pin", "spray", "spinner", "camera", "autododge", "esp", "aimbot", "holdshoot", "killaura",
-    "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam"
+    "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam", "turnshot"
 ]);
 var _modules = {
     camera:
@@ -280,6 +282,7 @@ var _moduleByFeature = {
     spinner: "spinner",
     aimbot: "aimbot",
     killaura: "combat",
+    turnshot: "combat",
     holdshoot: "combat",
     esp: "esp",
     brawltv: "spectator",
@@ -378,6 +381,7 @@ function startAgent()
                         resetSpray();
                         resetPin();
                         resetKillaura();
+                        resetTurnshot();
                         resetSpectator();
                         resetFps();
                         resetHoldShoot();
@@ -400,6 +404,7 @@ function startAgent()
                     maybeRefreshWallCache(bm, now);
                     if (f & _AIM_OR_KILL) updateAimbot(now);
                     if (f & FLAG_KILLAURA) updateKillaura(now);
+                    if (f & FLAG_TURNSHOT) updateTurnshot(now);
                     if (f & FLAG_AUTODODGE) updateAutododge();
                     if (f & FLAG_ESP) updateESP();
                     if (f & FLAG_SPRAY) updateSpray(now);
@@ -440,6 +445,7 @@ var _onDisable = {
     esp: resetESP,
     camera: resetCamera,
     killaura: resetKillaura,
+    turnshot: resetTurnshot,
     spray: resetSpray,
     pin: resetPin,
     brawltv: resetSpectator,
@@ -520,6 +526,7 @@ rpc.exports = {
         resetSpray();
         resetPin();
         resetKillaura();
+        resetTurnshot();
         resetSpectator();
         resetChatSpam();
         resetFps();

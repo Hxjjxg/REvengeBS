@@ -21,7 +21,8 @@ var FEATURE_NAMES = [
     "fpsunlock",
     "gradient",
     "holdshoot",
-    "speedhack"
+    "speedhack",
+    "turnshot"
 ];
 
 var FLAG_OF = {};
@@ -49,6 +50,7 @@ export var FLAG_SPRAY = FLAG_OF.spray;
 export var FLAG_PIN = FLAG_OF.pin;
 export var FLAG_HOLDSHOOT = FLAG_OF.holdshoot;
 export var FLAG_SPEEDHACK = FLAG_OF.speedhack;
+export var FLAG_TURNSHOT = FLAG_OF.turnshot;
 
 var _flags = 0;
 export function setState(feature, value)

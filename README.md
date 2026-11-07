@@ -4,6 +4,9 @@ Frida agent for **Brawl Stars v68.250** (official, arm64). Not BSD.
 
 An explicit CN V70 port is included; gameplay validation is still pending.
 
+The optional [turnshot feature](docs/TURNSHOT.md) fires a predicted normal attack
+when an unobstructed in-range enemy turns or slows. It is awaiting device testing.
+
 <p align="center">
   <a href="https://discord.gg/ZksZaUeDbW"><img src="https://img.shields.io/badge/Discord-join-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>

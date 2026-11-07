@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--gradient-index", type=int, help="Select a gradient by its zero-based catalog index")
     parser.add_argument("--feature", action="append", default=[],
                         choices=["pin", "spray", "spinner", "camera", "autododge", "esp", "aimbot", "holdshoot", "killaura",
-                                 "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam"])
+                                 "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam", "turnshot"])
     args = parser.parse_args()
     if args.duration <= 0:
         parser.error("Duration must be positive")
