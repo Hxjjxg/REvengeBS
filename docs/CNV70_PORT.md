@@ -111,6 +111,11 @@ The snapshot resolved the client data and position getters that were missing fro
 
 ## Latest private-device evidence (2026-11-07)
 
+The focused hypercharge follow-up now supplies the previously missing action:
+one natural type 17 (`0x11`) input at user activation, X/Y 0/0, no scanner errors
+and complete cleanup. [Evidence](evidence/runtime-observation/hypercharge-20261107.md).
+Agent-generated activation and signer equality remain unverified.
+
 The subsequent user-operated private round captured 273 natural input events and
 48 samples with retained projectiles, with no scanner errors. Ctrl+C cleanup
 succeeded. Normal-shot, super and gadget candidate types are present;

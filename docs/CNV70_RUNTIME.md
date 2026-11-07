@@ -108,6 +108,13 @@ The named import at allocator PLT `1DAFBC0` is misleading in the packaged analys
 
 ## Private gameplay observation (2026-11-07, latest)
 
+The focused follow-up captured one natural hypercharge type 17 (`0x11`) event
+at input #22, with X/Y 0/0, during the user-reported activation. It collected
+67 input events without scanner errors and completed interruption cleanup.
+Signing remained disabled. This supports the natural command mapping, not
+agent-generated activation or signed-token equality. See
+[hypercharge evidence](evidence/runtime-observation/hypercharge-20261107.md).
+
 The later user-operated capture on PID 24252 supersedes the missing-command
 checkpoint below: 273 natural input events, 132 scanner samples, 9,375 update
 calls, and 48 samples with retained projectiles (maximum 29). Types 0, 1, 2, 5,

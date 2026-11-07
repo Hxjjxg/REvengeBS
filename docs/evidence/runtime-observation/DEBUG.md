@@ -2,6 +2,11 @@
 
 ## Later user-operated verification
 
+The hypercharge follow-up captured one natural type 17 event at input #22 during
+the user-reported activation, supporting the candidate command mapping.
+See [hypercharge evidence](hypercharge-20261107.md). Generated-command behavior
+and signing equality remain outside this observation.
+
 The corrected observer on PID 24252 captured 273 natural inputs and 48 samples
 with retained projectiles, confirming the observation gate fix on-device.
 All inputs reported hash disabled and no scanner errors occurred. Ctrl+C cleanup
