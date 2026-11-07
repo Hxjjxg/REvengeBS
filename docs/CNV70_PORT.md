@@ -111,6 +111,10 @@ The snapshot resolved the client data and position getters that were missing fro
 
 ## Latest private-device evidence (2026-11-07)
 
+Fixed ESP retest: user reports no problems, including cleanup. The log records
+overlay draw activity, 5,307 update calls and complete cleanup. The earlier ESP
+unload failure described below is a historical checkpoint for the previous build.
+
 The user confirms camera, FPS label and ESP visuals work in training. ESP cleanup
 crashed the game despite successful cleanup RPCs. The raw EGL GOT replacement
 retained a script-owned callback after unload; an actual-source fixture reproduced

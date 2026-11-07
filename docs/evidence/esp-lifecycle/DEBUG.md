@@ -43,6 +43,13 @@ and attach failure. Device survival and overlay visibility need separate checks.
 
 ## Validation and user retest
 
+The user reports the fixed ESP test completed without problems. The saved
+tmp/test-esp-fixed.jsonl includes successful Interceptor hook installation,
+active overlay updates (for example drawn=3, self=true, 2412x1080), 5,307 update
+calls, prepared ready=true and cleanup completed=true. Combined with the user's
+post-cleanup survival report this verifies the observed regression on-device.
+Other independent feature tests remain outstanding.
+
 All 34 JavaScript tests and the Python cleanup test pass. The V70 and V68 bundles
 are rebuilt. A --debug runner switch and successful ESP hook-install log make
 the replacement hook observable. This fix removes a demonstrated ownership
