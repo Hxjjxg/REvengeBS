@@ -99,8 +99,8 @@ listener = Interceptor.attach(game.base.add(TICK_RVA), {
                 manager: manager.toString(), array: array.toString(),
                 ownId: ownId,
                 ownPlayerIndex: safeU32(self.add(0xe0)),
-                ownTeam: safeU32(self.add(0xec)),
-                resolverComparison_e4: safeU32(self.add(0xe4)),
+                ownTeam: safeU32(self.add(0xe4)),
+                unresolved_ec: safeU32(self.add(0xec)),
                 count: count, scanned: scanned, truncated: scanned < count, sample: objects});
         } catch (error) {
             if (calls <= 3 || calls % 100 === 0)

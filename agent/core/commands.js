@@ -14,6 +14,7 @@ import
     sha256
 }
 from "../utils/crypto.js";
+import { computeCNV70Token } from "./cnv70-signing.js";
 
 const CMD_BUF_SIZE = 72;
 const _zeroBuf = new Uint8Array(CMD_BUF_SIZE).buffer;
@@ -87,7 +88,7 @@ function signClientInput(ci, battle)
     try
     {
         if (battle.add(offsets.BattleMode_hashEnabled).readU8() === 0) return 0;
-        _loadSigningConstants();
+        if (offsets.Runtime_profile !== "cnv70") _loadSigningConstants();
     }
     catch (_)
     {
@@ -116,10 +117,11 @@ function signClientInput(ci, battle)
     }
     if (!cmdData16 || cmdData16.length < 16) return 0;
 
-    const token = _computeToken(key16, cmdData16);
+    const token = offsets.Runtime_profile === "cnv70" ?
+        computeCNV70Token(key16, cmdData16) : _computeToken(key16, cmdData16);
     try
     {
-        ci.add(CLIENT_INPUT_TOKEN).writeU32(token);
+        ci.add(offsets.ClientInput_token ?? CLIENT_INPUT_TOKEN).writeU32(token);
     }
     catch (_)
     {

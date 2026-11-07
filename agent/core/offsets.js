@@ -1,4 +1,6 @@
-export const offsets = Object.freeze(
+import { cnv70Offsets } from "./cnv70-offsets.js";
+
+const v68Offsets = Object.freeze(
 {
     LogicBattleModeClient_update: 0xc21a5c,
     BattleMode_getInstance: 0x9bb5e8,
@@ -285,3 +287,21 @@ export const offsets = Object.freeze(
     Screen_widthGlobal: 0x1303180,
     VTABLE_CHARACTER_DATA: 0x1206000,
 });
+
+export let offsets = v68Offsets;
+let profileLocked = false;
+
+export function selectOffsetProfile(name = "v68")
+{
+    const selected = name === "v68" ? v68Offsets : name === "cnv70" ? cnv70Offsets : null;
+    if (!selected) throw new Error("Unknown runtime profile: " + name);
+    if (profileLocked && selected !== offsets)
+        throw new Error("Cannot change runtime profile after native initialization");
+    offsets = selected;
+    return offsets;
+}
+
+export function lockOffsetProfile()
+{
+    profileLocked = true;
+}

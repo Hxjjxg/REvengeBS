@@ -76,6 +76,11 @@ function _readHeroIconName(data)
 {
     try
     {
+        if (typeof offsets.HeroData_iconString === "number")
+        {
+            const name = readScString(data.add(offsets.HeroData_iconString), 128);
+            return name && name.startsWith("hero_icon_") ? name.substring(10).toUpperCase() : null;
+        }
         const namePtr = data.add(offsets.HeroData_namePtr).readPointer();
         if (!_validPtr(namePtr)) return null;
         const str = namePtr.readCString();
@@ -95,12 +100,19 @@ function _readThrowsOverWalls(fns, own)
         if (!_validPtr(skill)) return false;
         const projectile = fns.LogicSkillData_getProjectileData(skill, 0);
         if (!_validPtr(projectile)) return false;
-        return (projectile.add(offsets.Projectile_isIndirect).readU32() | 0) !== 0;
+        return _readIndirect(projectile) !== 0;
     }
     catch (_)
     {
         return false;
     }
+}
+
+function _readIndirect(data)
+{
+    return offsets.Projectile_indirectWidth === 1 ?
+        data.add(offsets.Projectile_isIndirect).readU8() :
+        data.add(offsets.Projectile_isIndirect).readU32();
 }
 
 function _readHasCarryable(fns, own, bm)
@@ -209,6 +221,7 @@ function _ownerNameByIndex(ownerIndex)
 
 function _readAngle(projectile, rendering)
 {
+    if (typeof offsets.Projectile_angle !== "number") return null;
     if (rendering !== 3) return null;
     try
     {
@@ -380,7 +393,7 @@ function _captureProjectile(projectile, data, ownerTeamOverride)
         const rendering = fns.LogicProjectileData_getRendering ? fns.LogicProjectileData_getRendering(data) | 0 : 0;
         const angle = _readAngle(projectile, rendering);
         const target = _readTarget(fns, projectile);
-        const isThrower = data.add(offsets.Projectile_isIndirect).readU32() | 0;
+        const isThrower = _readIndirect(data) | 0;
         let isBeam = false;
         try
         {
@@ -682,15 +695,17 @@ export function updateScanner(bm, now)
             scanData.myRadius = functions.LogicCharacterData_getCollisionRadius(ownData) || 60;
             try
             {
-                scanData.myBrawlerId = ownData.add(offsets.CharData_brawlerId).readU8() | 0;
+                scanData.myBrawlerId = functions.LogicData_getInstanceId ?
+                    functions.LogicData_getInstanceId(ownData) : ownData.add(offsets.CharData_brawlerId).readU8() | 0;
             }
             catch (_)
             {}
             try
             {
                 const baseSpeed = functions.LogicCharacterData_getSpeed ? functions.LogicCharacterData_getSpeed(ownData) | 0 : 0;
-                const buff = own.add(offsets.LogicCharacterClientOwn_speedBuff).readS32() | 0;
-                const speed = baseSpeed + buff;
+                const speed = typeof offsets.LogicCharacterClient_currentSpeed === "number" ?
+                    own.add(offsets.LogicCharacterClient_currentSpeed).readS32() :
+                    baseSpeed + own.add(offsets.LogicCharacterClientOwn_speedBuff).readS32();
                 if (speed >= 300 && speed <= 3000) scanData.mySpeed = speed;
             }
             catch (_)
@@ -734,6 +749,13 @@ export function updateScanner(bm, now)
                             obj = objects.add(i * stride).readPointer();
                         }
                         if (!_validPtr(obj)) continue;
+                        if (offsets.Runtime_profile === "cnv70")
+                        {
+                            const vt = obj.readPointer();
+                            if (!vt.equals(moduleBase.add(offsets.VTABLE_CHARACTER_CLIENT)) &&
+                                !vt.equals(moduleBase.add(offsets.VTABLE_OWN_CHARACTER_CLIENT)) &&
+                                !vt.equals(moduleBase.add(offsets.VTABLE_PROJECTILE_CLIENT))) continue;
+                        }
                         const data = functions.LogicGameObjectClient_getData(obj);
                         if (!_validPtr(data)) continue;
                         const team = obj.add(offsets.GameObj_team).readU32();
@@ -748,7 +770,12 @@ export function updateScanner(bm, now)
                             if (idx >= 0) _friendlyIdx.add(idx);
                             continue;
                         }
-                        if (obj.add(offsets.GameObj_deadFlag).readU32() !== 0) continue;
+                        if (offsets.Runtime_profile === "cnv70")
+                        {
+                            if (!data.readPointer().equals(moduleBase.add(offsets.VTABLE_CHARACTER_DATA))) continue;
+                            if (obj.add(offsets.LogicCharacterClient_health).readS32() <= 0) continue;
+                        }
+                        else if (obj.add(offsets.GameObj_deadFlag).readU32() !== 0) continue;
                         const gid = String(functions.LogicGameObjectClient_getGlobalID(obj));
                         let brawlerName = _brawlerNameCache.get(gid);
                         if (brawlerName === void 0)
@@ -764,11 +791,15 @@ export function updateScanner(bm, now)
                         catch (_)
                         {}
                         if (!brawlerName && radius <= 0) continue;
-                        const kind = brawlerName ? "player" : "spawnable";
+                        const isHero = offsets.Runtime_profile === "cnv70" ?
+                            functions.LogicCharacterData_isHeroType(functions.LogicCharacterClient_getType(obj)) : !!brawlerName;
+                        const kind = isHero ? "player" : "spawnable";
                         let moveSpeed = 0;
                         try
                         {
-                            moveSpeed = functions.LogicCharacterData_getSpeed ? functions.LogicCharacterData_getSpeed(data) | 0 : 0;
+                            moveSpeed = typeof offsets.LogicCharacterClient_currentSpeed === "number" ?
+                                obj.add(offsets.LogicCharacterClient_currentSpeed).readS32() :
+                                functions.LogicCharacterData_getSpeed ? functions.LogicCharacterData_getSpeed(data) | 0 : 0;
                         }
                         catch (_)
                         {}
@@ -779,7 +810,8 @@ export function updateScanner(bm, now)
                         {
                             try
                             {
-                                brawlerId = data.add(offsets.CharData_brawlerId).readU8() | 0;
+                                brawlerId = functions.LogicData_getInstanceId ?
+                                    functions.LogicData_getInstanceId(data) : data.add(offsets.CharData_brawlerId).readU8() | 0;
                             }
                             catch (_)
                             {}

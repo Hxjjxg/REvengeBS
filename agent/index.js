@@ -20,14 +20,17 @@ import
 from "./core/libs.js";
 import
 {
-    offsets
+    offsets,
+    selectOffsetProfile,
+    lockOffsetProfile
 }
 from "./core/offsets.js";
 import
 {
     initScanner,
     resetScannerCache,
-    updateScanner
+    updateScanner,
+    scanData
 }
 from "./core/scanner.js";
 import
@@ -196,6 +199,10 @@ var _AIM_OR_KILL = FLAG_AIMBOT | FLAG_KILLAURA;
 var _setupBase = null;
 var _setupReady = false;
 var _setupDone = {};
+var _observeScanner = false;
+var _battleTickCount = 0;
+// Intermediate port availability; these require real private-match validation.
+const _cnv70Features = new Set(["pin", "spray", "spinner", "camera", "autododge"]);
 var _modules = {
     camera:
     {
@@ -296,6 +303,8 @@ function applyOptions(feature, setter, opts)
 
 function setupFeature(feature)
 {
+    if (offsets.Runtime_profile === "cnv70" && !_cnv70Features.has(feature) && feature !== "ipgrabber")
+        throw new Error("CN V70 mapping incomplete for feature: " + feature);
     setupModule(_moduleByFeature[feature]);
 }
 
@@ -311,9 +320,25 @@ function startAgent()
 {
     return libg().then((base) =>
     {
+        if (offsets.Runtime_profile === "cnv70")
+        {
+            if (Process.arch !== "arm64" || Process.pointerSize !== 8)
+                throw new Error("CN V70 requires arm64");
+            const signatures = [
+                [offsets.LogicGameObjectClient_getData, [0x00, 0x08, 0x40, 0xf9, 0xc0, 0x03, 0x5f, 0xd6]],
+                [offsets.LogicBattleModeClient_getOwnPlayerTeam, [0x00, 0xe4, 0x40, 0xb9, 0xc0, 0x03, 0x5f, 0xd6]]
+            ];
+            for (const [rva, expected] of signatures)
+            {
+                const bytes = new Uint8Array(base.add(rva).readByteArray(expected.length));
+                if (!expected.every((byte, i) => bytes[i] === byte))
+                    throw new Error("CN V70 live signature mismatch at 0x" + rva.toString(16));
+            }
+        }
         _setupBase = base;
         initFunctions(base);
-        initCSV(base);
+        if (["CSVRow__getValueAt", "CSVRow__getIntegerValueAt", "CSVRow__getName", "ResourceManager__getCSV"]
+            .every(key => typeof offsets[key] === "number")) initCSV(base);
         initDataTables(base);
         initScanner(base);
         watchTileChanges(base);
@@ -322,7 +347,8 @@ function startAgent()
         {
             base: String(base),
             arch: Process.arch,
-            pointerSize: Process.pointerSize
+            pointerSize: Process.pointerSize,
+            profile: offsets.Runtime_profile || "v68"
         });
         setupEnabledFeatures();
         let lastBM = null;
@@ -334,6 +360,7 @@ function startAgent()
                 {
                     const bm = args[0];
                     if (!bm || bm.isNull()) return;
+                    _battleTickCount++;
                     if (!lastBM || !lastBM.equals(bm))
                     {
                         lastBM = bm;
@@ -361,8 +388,9 @@ function startAgent()
                     }
                     const f = getFlags();
                     const now = Date.now();
-                    if ((f & _ACTIVE_MASK) === 0) return;
+                    if ((f & _ACTIVE_MASK) === 0 && !_observeScanner) return;
                     updateScanner(bm, now);
+                    if (offsets.Runtime_profile === "cnv70" && scanData.lastUpdate !== now) return;
                     maybeRefreshWallCache(bm, now);
                     if (f & _AIM_OR_KILL) updateAimbot(now);
                     if (f & FLAG_KILLAURA) updateKillaura(now);
@@ -421,8 +449,14 @@ rpc.exports = {
     {
         return true;
     },
-    start()
+    start(options)
     {
+        if (options && options.profile) selectOffsetProfile(options.profile);
+        lockOffsetProfile();
+        if (offsets.Runtime_profile === "cnv70")
+            for (const feature of Object.keys(state))
+                if (state[feature] && !_cnv70Features.has(feature))
+                    throw new Error("CN V70 mapping incomplete for feature: " + feature);
         if (_started) return true;
         if (_startPromise) return _startPromise;
         _startPromise = startAgent().then(() =>
@@ -451,6 +485,8 @@ rpc.exports = {
     {
         if (!(feature in state)) return;
         const enabled = !!value;
+        if (enabled && offsets.Runtime_profile === "cnv70" && !_cnv70Features.has(feature))
+            throw new Error("CN V70 mapping incomplete for feature: " + feature);
         setState(feature, enabled);
         logInfo("toggle " + feature + " = " + enabled,
         {
@@ -488,6 +524,25 @@ rpc.exports = {
     {
         setupFeature("ipgrabber");
         return getServerIP();
+    },
+    runtimeprofile()
+    {
+        return { profile: offsets.Runtime_profile || "v68",
+            availableForTesting: offsets.Runtime_profile === "cnv70" ? Array.from(_cnv70Features) : Object.keys(_moduleByFeature),
+            gameplayValidated: offsets.Runtime_profile === "cnv70" ? [] : null };
+    },
+    scannerstatus()
+    {
+        return { ticks: _battleTickCount, observing: _observeScanner,
+            lastUpdate: scanData.lastUpdate, x: scanData.myX, y: scanData.myY,
+            team: scanData.myTeamId, playerIndex: scanData.myPlayerIndex,
+            speed: scanData.mySpeed, brawler: scanData.myBrawlerName,
+            enemies: scanData.enemies.length, projectiles: scanData.liveProjectiles };
+    },
+    observescanner(value)
+    {
+        _observeScanner = !!value;
+        return _observeScanner;
     },
     setautododgeopts(opts)
     {

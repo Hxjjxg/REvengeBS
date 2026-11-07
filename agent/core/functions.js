@@ -1,6 +1,7 @@
 import
 {
-    offsets
+    offsets,
+    lockOffsetProfile
 }
 from "./offsets.js";
 
@@ -21,9 +22,16 @@ function _nf(name, ret, args)
     }
 }
 
+function _s32Field(name)
+{
+    const field = offsets[name];
+    return typeof field === "number" ? value => value.add(field).readS32() : null;
+}
+
 export function initFunctions(baseIn)
 {
     if (_n) return _n;
+    lockOffsetProfile();
     base = baseIn;
 
     _n = {
@@ -47,6 +55,8 @@ export function initFunctions(baseIn)
         LogicProjectileData_getRendering: _nf("LogicProjectileData_getRendering", "int32", ["pointer"]),
         LogicProjectileData_isBeam: _nf("LogicProjectileData__isBeam", "bool", ["pointer"]),
         LogicCharacterData_getSpeed: _nf("LogicCharacterData_getSpeed", "int32", ["pointer"]),
+        LogicCharacterClient_getType: _nf("LogicCharacterClient_getType", "int", ["pointer"]),
+        LogicCharacterData_isHeroType: _nf("LogicCharacterData_isHeroType", "bool", ["int"]),
         LogicCharacterData_getCollisionRadius: _nf("LogicCharacterData_getCollisionRadius", "uint32", ["pointer"]),
         BattleScreen_getLogicBattleModeClient: _nf("GameScreen__getLogicBattle", "pointer", ["pointer"]),
         LogicBattleModeClient_getTileMap: _nf("LogicBattleModeClient__getTileMap", "pointer", ["pointer"]),
@@ -54,17 +64,18 @@ export function initFunctions(baseIn)
         LogicProjectileClient_getTargetX: _nf("LogicProjectileClient_getTargetX", "int32", ["pointer"]),
         LogicProjectileClient_getTargetY: _nf("LogicProjectileClient_getTargetY", "int32", ["pointer"]),
         LogicCharacterClient_getWeaponSkill: _nf("LogicCharacterClient__getWeaponSkill", "pointer", ["pointer"]),
-        LogicSkillData_getCastingRange: _nf("LogicSkillData__getCastingRange", "int32", ["pointer"]),
+        LogicSkillData_getCastingRange: _nf("LogicSkillData__getCastingRange", "int32", ["pointer"]) || _s32Field("LogicSkillData_castingRange"),
         LogicCharacterClient_getLinkedCarryable: _nf("LogicCharacterClient__getLinkedCarryable", "pointer", ["pointer", "pointer"]),
         LogicSkillData_getProjectileData: _nf("LogicSkillData__getProjectileData", "pointer", ["pointer", "int"]),
         LogicSkillClient_getData: _nf("LogicSkillClient__getData", "pointer", ["pointer", "int"]),
         LogicData_getName: _nf("LogicData_getName", "pointer", ["pointer"]),
+        LogicData_getInstanceId: _nf("LogicData_getInstanceId", "int", ["pointer"]),
         StringCtor: _nf("StringCtor", "pointer", ["pointer", "pointer"]),
         ScString_destruct: _nf("ScString_destruct", "pointer", ["pointer"]),
         TextField_setText: _nf("TextField_setText", "pointer", ["pointer", "pointer"]),
         LogicCharacterClient_isImmuneOrUntargetable: _nf("LogicCharacterClient__isImmuneOrUntargetable", "bool", ["pointer"]),
-        LogicSkillData_getMsBetweenAttacks: _nf("LogicSkillData__getMsBetweenAttacks", "int", ["pointer"]),
-        LogicSkillData_getBehaviour: _nf("LogicSkillData__getBehaviour", "int", ["pointer"]),
+        LogicSkillData_getMsBetweenAttacks: _nf("LogicSkillData__getMsBetweenAttacks", "int", ["pointer"]) || _s32Field("LogicSkillData_msBetweenAttacks"),
+        LogicSkillData_getBehaviour: _nf("LogicSkillData__getBehaviour", "int", ["pointer"]) || _s32Field("LogicSkillData_behaviour"),
         LogicSkillData_getLinkedSkill: _nf("LogicSkillData__getLinkedSkill", "pointer", ["pointer"]),
         LogicCharacterClient_getSkillAt: _nf("LogicCharacterClient__getSkillAt", "pointer", ["pointer", "int"]),
         LogicSkillClient_canActivate: _nf("LogicSkillClient__canActivate", "bool", ["pointer", "pointer", "pointer"]),

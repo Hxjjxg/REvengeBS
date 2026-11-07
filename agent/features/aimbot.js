@@ -219,7 +219,9 @@ function _shotOf(skill)
                 if (rad <= 0) rad = TUNE.FALLBACK_RADIUS;
                 try
                 {
-                    loft = (projectile.add(offsets.Projectile_isIndirect).readU32() | 0) !== 0;
+                    loft = (offsets.Projectile_indirectWidth === 1 ?
+                        projectile.add(offsets.Projectile_isIndirect).readU8() :
+                        projectile.add(offsets.Projectile_isIndirect).readU32()) !== 0;
                 }
                 catch (_)
                 {}

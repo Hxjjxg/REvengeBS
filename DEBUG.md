@@ -169,3 +169,19 @@ After a controlled relaunch to clear the unresponsive Gadget session, PID `5483`
 The implementation review reproduced two starts before `libg()` resolves installing two hooks; stop detached only the second handle. A stop before module resolution also allowed a late hook installation. The cause is the listener-only guard before an asynchronous wait. The fix shares the pending start, invalidates pending work with a generation on stop, and checks the generation again after module resolution. Four focused mocked lifecycle tests pass, including both reproduced cases, restart after cancellation, and automatic cleanup at 20 inputs. Together with the eight signing reference tests, all 12 tests pass.
 
 A new Frida client against still-live locked PID `5483` again timed out during enumeration; its bounded smoke harness exited. Following a controlled relaunch and the configured injection delay, the final rebuilt diagnostic on Gadget PID `12226` returned `startsigning: true`, `stopsigning: true`, and `stop: true`, then unloaded/detached. The recurring second-client transport stall remains unexplained; it was not a diagnostic script error. No natural command tokens or in-match objects have been sampled.
+
+## Debug: V70 runtime smoke blocked before script loading
+
+Observed: PID12226 remains alive, root reads work, and device port27042 is listening. A three-second and then a twenty-second bounded run both expire during Frida process enumeration, before script creation or RPC. TCP shows a pending connection and CLOSE_WAIT on Gadget's loopback socket.
+
+Hypotheses: H1 stale Gadget transport/session (supported by recurring second-client stalls and socket state; test controlled relaunch then same harness); H2 V70 runtime startup deadlock (conflicts: startup not reached; test script-load/RPC milestones); H3 missing or exited process/forward (conflicts: PID/listener present; test ADB PID/listener, already passed). No evidence supports changing the runtime code to fix this observation.
+
+Experiment: no code change; use the bounded single-connection harness, first with the existing process (deadline before load), then after one controlled app relaunch. This recovery does not establish why Gadget stalled. It must not be counted as gameplay validation.
+
+## Correction: own-team getter and legacy scanner assumptions
+
+Exact V68 getter C23608 reads E4. V70 1A20358 also reads E4, follows own-index getter1A20350, precedes the matching next function, and appears in native team comparisons. MCP bytes independently confirm both getter sequences. The tiny-function BinDiff1A1FF10 returns EC and is rejected. Other rejected hypotheses were a global structure shift (conflicts with E0 own index) and a version/base mismatch (conflicts with unchanged anchors and exact adjacent callflow).
+
+The V70 adapter uses E4 and the probe now labels EC unresolved. Shared scanner fixtures deliberately set EC=99 while E4=1 and verify team1. The same fixture checks positive health despite nonzero legacy D0, native currentSpeed despite different base speed, proper hero/NPC discrimination, byte-width indirect flags with an adjacent nonzero byte, native data identity rather than pointer low bytes, and sender token38 while preserving34. Fourteen signing/lifecycle/runtime tests pass. These are host regression checks; private-match objects and native token equality remain outstanding.
+
+Recovery result: after the single controlled relaunch, PID13248 accepted the compiled V70 runtime and signing-observer scripts in one session. `start=true`, `startsigning=true`, repeated scanner RPC replies, and cleanup completed with exit0. This rejects runtime-startup deadlock for this build and supports a process/session transport problem in the previous PID. The underlying Gadget second-client stall remains unresolved. Locked-screen zero ticks and zero signing comparisons must not be reported as a match pass.

@@ -44,14 +44,14 @@ The direct BinDiff result is `analysis/bindiff-revenge-result/libg_REvenge_v68.s
 |---|---:|---|
 | `BattleMode_getInstance` `0x9BB5E8` | `0x16FE760` | Similarity 0.9268, confidence 0.9890; decomp follows the same state-5 active-mode flow. |
 | `LogicBattleModeClient_getOwnCharacter` `0xC239B0` | `0x1A20700` | Similarity 1.0, confidence 0.9933; reads manager at `this+0x28`, own ID at `this+0x100`, then calls manager lookup. |
-| `LogicBattleModeClient_getOwnPlayerTeam` `0xC23608` | `0x1A1FF10` | Similarity 1.0, confidence 0.9526; V70 decomp returns the 32-bit field at `this+0xEC`. |
+| `LogicBattleModeClient_getOwnPlayerTeam` `0xC23608` | `0x1A20358` | Exact getter reads `+0xE4`; adjacent own-index getter and matching following function, plus team-resolution callers, confirm this. Reject tiny-function BinDiff candidate `0x1A1FF10` (`+0xEC`). |
 | `LogicBattleModeClient_getOwnPlayerIndex` `0xC23600` | `0x1A20350` | Similarity 1.0, confidence 0.9047; V70 decomp returns the 32-bit field at `this+0xE0`. |
 | `LogicGameObjectManagerClient_findGameObject` `0xB61CA4` | `0x192D3F0` | Similarity 1.0, confidence 0.9933; iterates the manager array with count `+0xC`, stride 8, and filters ID/type. |
 | `LogicBattleModeClient_setClientPredictionMoveTo` `0xC23B14` | `0x1A20864` | Similarity 1.0, confidence 0.9890. |
 | `ClientInputManager_addInput` `0x7EFC30` | `0xF2CA40` | Similarity 1.0, confidence 0.9933. |
 | `BattleScreen_activateSkill` `0x85CE88` | `0x14EC88C` | Similarity 0.9869, confidence 0.9905. |
 | `BattleScreen_update` `0x59C74C` | `0xC60C40` | Similarity 0.8894, confidence 0.9789; large per-frame handler. |
-| `handleJoystick` `0x5BABA0` | `0xD30B70` | Similarity 0.9579, confidence 0.9627. |
+| Legacy `handleJoystick` `0x5BABA0` | Rejected | Both source and V70 `0xD30B70` create a popup/container. The legacy label does not identify joystick input. |
 | Speedhack `GameScreen__getLogicBattle` `0x87AA4C` | `0x15141BC` | Similarity 1.0, confidence 0.9047; both return the nested logic-battle pointer at context `+0x8F8/+0x9A0`, then `+0x28`. |
 | Speedhack pathfinder `0xC6B2C0` | `0x1A87474` | Similarity 1.0, confidence 0.9933; both have the same 8-argument contract and compare candidate paths by squared distance. |
 | Speedhack state predicate `0xB3284C` | `0x18EFDB4` | Similarity 0.9914, confidence 0.9928; matching state/eligibility checks and branch structure. Its V70 data-access helper target remains unresolved separately. |
@@ -116,3 +116,22 @@ The snapshot resolved the client data and position getters that were missing fro
 3. Inspect the live V70 process on the connected device and confirm module base and object relationships before turning static hypotheses into Frida offsets.
 4. Port the runtime foundation first, then migrate dependent features against observed structure evidence.
 5. Build and test the resulting agent on-device; record exact commands, behavior, and any limits here.
+
+## Integrated runtime checkpoint (2026-11-07)
+
+`agent/cnv70.js` now selects an explicit V70 profile before shared-agent startup. It uses recovered V70 functions/fields, never falls back to V68 values, locks the profile before asynchronous native initialization, and verifies two live getter signatures before installing hooks. CSV/data-table initialization uses recovered bindings. Unmapped features report an error when enabled.
+
+The shared scanner uses native data identity, embedded icon ScString, character-instance/data class checks, positive health, current movement speed, body/owner/raw-team fields, and the corrected own-team getter. Indirect-projectile flags use byte reads. The unproven projectile angle field is omitted; target/observed-velocity paths remain available. The shared sender calls the V70 allocator/constructor/inserter and pure signer, storing the token at38. These changes preserve the V68 default profile.
+
+Initial features available for private testing: pin, spray, spinner, camera, autododge. Available does not mean gameplay-validated. Other features still need remaining bindings/semantic checks and integration. Scanner observation and native signing observation create no commands and are the required first match checks.
+
+### Validation and reproduction
+
+- `node --test tests/cnv70-runtime.test.mjs tests/cnv70-signing.test.mjs tests/cnv70-diagnostic-lifecycle.test.mjs`:14 passed.
+- `npx --yes frida-compile agent/cnv70.js -o tmp/cnv70-agent.js -B iife`: built successfully (clear invalid proxy variables only in the build process, as needed).
+- Bounded single-session runner: `G:\frida16\.venv\Scripts\python.exe -u tools/cnv70_runtime.py --duration 120 --signing-bundle tmp/cnv70-diagnostic-signing.js --output tmp/cnv70-private-match.jsonl`. It starts scanner and signing observation with all features disabled; individual `--feature` arguments are for subsequent private-match tests.
+- Live startup smoke after controlled relaunch, PID13248: runtime `start=true`, profile=`cnv70`, signing observer `start=true`, repeated scanner RPC responses, unload/detach completed, exit0. The locked phone produced zero battle ticks and no native signing comparisons. Log: `tmp/cnv70-runtime-smoke-relaunch.jsonl` (local temporary evidence, not committed).
+
+The phone is still locked. The user selected private friendly/practice testing; no public match was started. Actual tick execution, object values, native token equality, movement/pin/spray/camera/autododge behavior, and visual overlay remain outstanding. Full port completion is not claimed.
+
+Detailed native evidence: [scanner/CSV/strings](evidence/cnv70-scanner-native.md), [skills/projectiles](evidence/cnv70-skills-projectiles.md), and [camera/walls/combat](evidence/cnv70-camera-wall.md).

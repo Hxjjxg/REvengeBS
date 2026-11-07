@@ -93,6 +93,8 @@ export function setupSpinner(base)
             onEnter: function(args)
             {
                 if (!state.spinner) return;
+                if (offsets.Runtime_profile === "cnv70" &&
+                    (scanData.lastUpdate === 0 || Date.now() - scanData.lastUpdate > 500)) return;
                 if (state.autododge && getDodgeDir()) return;
                 try
                 {
