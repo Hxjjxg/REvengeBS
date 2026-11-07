@@ -93,6 +93,7 @@ The probe ran on the home lobby, so no battle-update callback was expected. The 
 - A repeat command attempted to attach to Gadget, load `tmp/cnv70-diagnostic.js`, call `start()`, read `endpoint()`, then call `stop()`; no successful attach or RPC result was captured.
 - `exec_command` returned after its default 10-second yield with an empty output string. The returned session metadata was not printed, so the command's completion state was initially unknown.
 - A follow-up process query found two Python processes from that invocation still running. Both exact PIDs were stopped; no unrelated process was targeted.
+- A broader check found eight older `cnv70_probe.py` clients still waiting. Their exact PIDs were stopped after confirming the game and Gadget were absent; a verification query found no remaining probe processes.
 - An earlier saved run of the same diagnostic returned `start: true` and `stop: true`. A separate Frida command still attaches and enumerates Gadget PID `28834`.
 
 ### Hypotheses
