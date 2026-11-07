@@ -96,7 +96,7 @@ The local Python environment at `G:\frida16\.venv` successfully attached to the 
 
 The current IDA MCP V70 session `9119f77b` is healthy, with Hex-Rays, string caches, and automatic analysis ready. The open V70 IDB is the analyzed library whose hash is listed above.
 
-Live byte checks confirm the loaded APK library and module base: `0x192F6C8`, `0x1937DE0`, and `0x17060F4` match the headless IDB. At `0x1A1E198`, however, the device contains an indirect-branch stub (`LDR X16, #8; BR X16`) pointing to `0x76ff5a5700`, outside any Frida module, while the IDB contains a normal function prologue. The candidate entry is runtime-redirected; the next private-match probe must establish whether the entry hook is still reached before the anonymous target is investigated.
+Live byte checks confirm the loaded APK library and module base: `0x192F6C8`, `0x1937DE0`, and `0x17060F4` match the headless IDB. A later read in Gadget PID `28834` found `libg.so + 0x1A1E198` begins with the same normal function prologue as the IDB. An earlier check had observed an indirect-branch stub pointing at unmapped address `0x76ff5a5700`, but that state was not reproducible and is not treated as an established redirection. The read-only entry hook remains installed without callbacks while the device is locked; a private-match run is still needed to confirm the tick and sample live objects.
 
 ## Isolated V70 endpoint monitor
 
