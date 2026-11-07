@@ -111,6 +111,11 @@ The snapshot resolved the client data and position getters that were missing fro
 
 ## Latest private-device evidence (2026-11-07)
 
+The user also reports speedhack, local spectator and BrawlTV displays work.
+Pin/spray remain unresolved: current carry counts/slots may differ. Per explicit
+user instruction record that finding only; do not modify pin/spray or the
+deferred FPS discrepancy during remaining feature tests.
+
 The user reports aimbot, holdshoot, attack-only killaura, spinner and autododge
 working with successful cleanup. FPS unlock/FPS display also operate, but the
 overlay reads around 120 while the developer refresh display reads 90. The user

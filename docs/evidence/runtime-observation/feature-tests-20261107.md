@@ -23,7 +23,21 @@ The user earlier confirmed camera, FPS label and ESP display. ESP unloading
 crashed on the older build; its corrected build passed the user retest, including
 cleanup. See [ESP lifecycle](../esp-lifecycle/DEBUG.md).
 
-## Deferred FPS discrepancy
+## Subsequent user results
+
+The user reports speedhack, local spectator display and local BrawlTV display
+work. Pin and spray are not accepted as passed: the user suspects the current
+version changed carry counts and slot positions and explicitly requests recording
+only, without modifying either implementation. Their layouts remain unresolved.
+The FPS discrepancy below is also deferred by explicit user instruction.
+
+Remaining tests use runner --options-file (gradient/chatspam/killaura option
+objects applied before enabling features) and --gradient-index (zero-based
+catalog selection). Presets in tools/test-options isolate automatic super,
+automatic hypercharge and slow private-room chat messages. These paths remain
+unverified until the user reports outcomes.
+
+## Deferred FPS discrepancy details
 
 The game overlay displays around 120 with noticeable variation during a match,
 while the phone's developer refresh-rate display reads 90. These indicators

@@ -16,12 +16,23 @@ def main():
     parser.add_argument("--duration", type=float, default=120)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--debug", action="store_true", help="Include agent setup and feature logs")
+    parser.add_argument("--options-file", type=Path, help="JSON object of feature option objects")
+    parser.add_argument("--gradient-index", type=int, help="Select a gradient by its zero-based catalog index")
     parser.add_argument("--feature", action="append", default=[],
                         choices=["pin", "spray", "spinner", "camera", "autododge", "esp", "aimbot", "holdshoot", "killaura",
                                  "speedhack", "fps", "fpsunlock", "gradient", "brawltv", "spec", "chatspam"])
     args = parser.parse_args()
     if args.duration <= 0:
         parser.error("Duration must be positive")
+    setters = {"gradient": "setgradientopts", "chatspam": "setchatspamopts", "killaura": "setkillauraopts"}
+    options = json.loads(args.options_file.read_text(encoding="utf-8-sig")) if args.options_file else {}
+    if not isinstance(options, dict) or any(key not in setters or not isinstance(value, dict)
+                                            for key, value in options.items()):
+        parser.error("Options must be an object containing gradient, chatspam or killaura option objects")
+    if any(key not in args.feature for key in options):
+        parser.error("Each configured feature must also be enabled with --feature")
+    if args.gradient_index is not None and (args.gradient_index < 0 or "gradient" not in args.feature):
+        parser.error("--gradient-index requires --feature gradient and a nonnegative index")
     # Resolve inputs before connecting; missing builds must not leave a session.
     source = args.bundle.read_text(encoding="utf-8")
     signing_source = args.signing_bundle.read_text(encoding="utf-8") if args.signing_bundle else None
@@ -64,6 +75,15 @@ def main():
             emit("start", pid=target.pid, result=agent.exports_sync.start({"profile": "cnv70"}))
             emit("profile", value=agent.exports_sync.runtimeprofile())
             agent.exports_sync.observescanner(True)
+            if args.gradient_index is not None:
+                catalog = agent.exports_sync.listgradients()
+                emit("gradient_catalog", value=catalog)
+                if args.gradient_index >= len(catalog):
+                    raise ValueError("Gradient index outside the available catalog")
+                options["gradient"] = {"name": catalog[args.gradient_index]}
+            for feature, feature_options in options.items():
+                getattr(agent.exports_sync, setters[feature])(feature_options)
+                emit("options", name=feature, value=feature_options)
             if signing_source:
                 signing = session.create_script(signing_source)
                 scripts.append(signing)
