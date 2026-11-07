@@ -85,3 +85,43 @@ Enabled the CN target with the requested 4000 ms delay and changed Gadget `on_lo
 ### Root Cause
 
 The probe ran on the home lobby, so no battle-update callback was expected. The correctness of `0x1A1E198` as the in-match update hook remains unconfirmed.
+
+## Debug: Repeat diagnostic RPC returned no output
+
+### Observations
+
+- A repeat command attempted to attach to Gadget, load `tmp/cnv70-diagnostic.js`, call `start()`, read `endpoint()`, then call `stop()`; no successful attach or RPC result was captured.
+- `exec_command` returned after its default 10-second yield with an empty output string. The returned session metadata was not printed, so the command's completion state was initially unknown.
+- A follow-up process query found two Python processes from that invocation still running. Both exact PIDs were stopped; no unrelated process was targeted.
+- An earlier saved run of the same diagnostic returned `start: true` and `stop: true`. A separate Frida command still attaches and enumerates Gadget PID `28834`.
+
+### Hypotheses
+
+#### H1: The command was still running because the exec tool yielded at 10 seconds
+- Supports: the original call used the default 10-second yield and the Python process remained alive; no exit code or session ID was captured.
+- Conflicts: the process remained alive long enough to look stalled, and no RPC result was printed.
+- Test: run a minimal Frida attach/load/ping/unload command with a 30-second yield and print the complete command result metadata.
+
+#### H2: The diagnostic's initial `/proc/self/net/tcp` scan blocks inside `start()`
+- Supports: the only awaited operation after script load is `start()`, which reads the proc TCP table synchronously.
+- Conflicts: the prior diagnostic smoke test returned `start: true` and `stop: true`.
+- Test: if minimal RPC succeeds, repeat with the diagnostic and capture its command session ID and final result.
+
+#### H3: The game/Gadget process exited before the minimal ping (root hypothesis)
+- Supports: the minimal ping failed with `frida.TransportError: connection closed` during `enumerate_processes`; subsequent ADB checks found no game or Gadget process, while the phone remained at `NotificationShade` with keyguard showing.
+- Conflicts: earlier in this turn Frida enumerated Gadget PID `28834`, and the forward still existed on the host.
+- Test: after the user unlocks and relaunches the CN client, verify the Gadget PID and device-side listener before retrying the minimal ping.
+
+### Experiments
+
+- No diagnostic code changed. The first repeat did not capture final command metadata, so it is not a reproduced diagnostic failure.
+- Minimal experiment: attach to Gadget, load a script that only exports `ping()`, then call it. It failed before attach/script creation with `frida.TransportError: connection closed` during process enumeration (exit code 1).
+- Device-side check: host forwarding remained configured and listening, but `adb shell pidof Gadget`, the game process query, and device `/proc/net/tcp*` listener queries returned no Gadget/game PID or port 27042 listener. The current window remained `NotificationShade`; recent logcat had no matching Frida/Gadget crash lines.
+
+### Root Cause
+
+The repeat RPC attempt had no live Gadget/game process behind the still-configured host forward, so Frida could not enumerate a remote process. Why the CN process exited is not established; the diagnostic RPC itself has not been reproduced as faulty.
+
+### Fix
+
+No code fix is justified. Resume testing only after the user unlocks and relaunches the CN client; first confirm the Gadget process and device listener, then run the minimal ping before the diagnostic RPC.
