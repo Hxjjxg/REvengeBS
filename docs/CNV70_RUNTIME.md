@@ -108,6 +108,15 @@ The named import at allocator PLT `1DAFBC0` is misleading in the packaged analys
 
 ## Private gameplay observation (2026-11-07, latest)
 
+The later user-operated capture on PID 24252 supersedes the missing-command
+checkpoint below: 273 natural input events, 132 scanner samples, 9,375 update
+calls, and 48 samples with retained projectiles (maximum 29). Types 0, 1, 2, 5,
+23, 24 and 25 were observed; all inputs reported `hash disabled`. No scanner
+errors occurred. Ctrl+C completed cleanup successfully. The user did not use
+hypercharge. Full evidence, candidate action labels and limitations:
+[manual private actions](evidence/runtime-observation/manual-actions-20261107.md).
+This validates the observer, not feature behavior or signing equality.
+
 The device was unlocked and entered a private friendly room with bots. On PID
 18930, the 180-second `tmp/cnv70-private-match-3min.jsonl` capture recorded 178
 scanner samples and 10,283 battle-update calls. Shelly position and movement

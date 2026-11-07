@@ -1,5 +1,13 @@
 # Private-match observation, 2026-11-07
 
+## Later user-operated verification
+
+The corrected observer on PID 24252 captured 273 natural inputs and 48 samples
+with retained projectiles, confirming the observation gate fix on-device.
+All inputs reported hash disabled and no scanner errors occurred. Ctrl+C cleanup
+completed. Hypercharge was not used. See [manual evidence](manual-actions-20261107.md).
+Earlier missing-input and projectile-zero observations below are historical.
+
 ## Observations
 
 PID 18930 accepted Frida runtime and diagnostic attachment. A 180-second capture

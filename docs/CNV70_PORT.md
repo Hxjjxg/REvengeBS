@@ -111,6 +111,12 @@ The snapshot resolved the client data and position getters that were missing fro
 
 ## Latest private-device evidence (2026-11-07)
 
+The subsequent user-operated private round captured 273 natural input events and
+48 samples with retained projectiles, with no scanner errors. Ctrl+C cleanup
+succeeded. Normal-shot, super and gadget candidate types are present;
+hypercharge was not used. See [manual evidence](evidence/runtime-observation/manual-actions-20261107.md).
+Feature behavior and signing equality remain unverified.
+
 All 16 feature paths are integrated; earlier unported/locked-screen statements
 below are historical checkpoints. The phone has since entered a private friendly
 match with bots. Frida captured changing Shelly positions/speed, enemy counts,
